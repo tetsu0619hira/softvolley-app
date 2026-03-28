@@ -111,6 +111,31 @@ export async function updateTournamentPointRules(tournamentId: string, pointRule
   });
 }
 
+export async function deleteTournament(tournamentId: string) {
+  if (!db) throw new Error('Firebase未設定です。');
+  const dbRef = db;
+
+  const [teamsSnap, matchesSnap] = await Promise.all([
+    getDocs(
+      query(collection(dbRef, COLLECTIONS.teams), where('tournamentId', '==', tournamentId)),
+    ),
+    getDocs(
+      query(collection(dbRef, COLLECTIONS.matches), where('tournamentId', '==', tournamentId)),
+    ),
+  ]);
+
+  const deleteTasks: Promise<void>[] = [];
+  teamsSnap.docs.forEach((item) => {
+    deleteTasks.push(deleteDoc(doc(dbRef, COLLECTIONS.teams, item.id)));
+  });
+  matchesSnap.docs.forEach((item) => {
+    deleteTasks.push(deleteDoc(doc(dbRef, COLLECTIONS.matches, item.id)));
+  });
+
+  await Promise.all(deleteTasks);
+  await deleteDoc(doc(dbRef, COLLECTIONS.tournaments, tournamentId));
+}
+
 export async function createTeam(tournamentId: string, name: string) {
   if (!db) throw new Error('Firebase未設定です。');
   const timestamp = nowIso();

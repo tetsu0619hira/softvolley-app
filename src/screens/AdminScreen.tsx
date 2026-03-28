@@ -2,9 +2,12 @@ import { useMemo, useState } from 'react';
 import {
   Alert,
   Keyboard,
+  LayoutAnimation,
+  Platform,
   StyleSheet,
   Text,
   TextInput,
+  UIManager,
   View,
 } from 'react-native';
 import {
@@ -25,6 +28,7 @@ import {
   createTournament,
   deleteMatch,
   deleteTeam,
+  deleteTournament,
   updateTournamentPointRules,
 } from '../firebase/repositories';
 import { useTournamentData } from '../hooks/useTournamentData';
@@ -50,6 +54,20 @@ export default function AdminScreen() {
   const [homeTeamId, setHomeTeamId] = useState('');
   const [awayTeamId, setAwayTeamId] = useState('');
   const [saving, setSaving] = useState(false);
+  const [sectionOpen, setSectionOpen] = useState({
+    connection: false,
+    session: false,
+    tournament: false,
+    rules: false,
+    teams: false,
+    matches: false,
+  });
+
+  useEffect(() => {
+    if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+      UIManager.setLayoutAnimationEnabledExperimental(true);
+    }
+  }, []);
 
   const [rules, setRules] = useState<PointRules>(
     normalizePointRules(currentTournament?.pointRules ?? { ...DEFAULT_POINT_RULES }),
@@ -248,26 +266,59 @@ export default function AdminScreen() {
     ]);
   };
 
+  const handleDeleteTournament = async () => {
+    if (!currentTournament) {
+      Alert.alert('対象なし', '削除対象の大会がありません。');
+      return;
+    }
+
+    Keyboard.dismiss();
+    Alert.alert(
+      '大会削除確認',
+      `「${currentTournament.name}」を削除します。\nこの大会のチーム・対戦カード・結果もすべて削除されます。`,
+      [
+        { text: 'キャンセル', style: 'cancel' },
+        {
+          text: '削除',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setSaving(true);
+              const deletingTournamentId = currentTournament.id;
+              await deleteTournament(deletingTournamentId);
+              if (selectedTournamentId === deletingTournamentId) {
+                setSelectedTournamentId(null);
+              }
+              setHomeTeamId('');
+              setAwayTeamId('');
+              Alert.alert('削除完了', '大会と関連データを削除しました。');
+            } catch (error) {
+              Alert.alert(
+                '削除失敗',
+                error instanceof Error ? error.message : '大会削除に失敗しました。',
+              );
+            } finally {
+              setSaving(false);
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  const toggleSection = (key: keyof typeof sectionOpen) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setSectionOpen((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }));
+  };
+
   return (
     <ScreenContainer
       title="管理者"
       subtitle="管理者ログイン後に大会・チーム・勝ち点ルールを編集"
     >
-      <TournamentSelector
-        tournaments={tournaments}
-        selectedTournamentId={selectedTournamentId}
-        onSelect={setSelectedTournamentId}
-      />
-      <View style={styles.card}>
-        <Text style={styles.heading}>Firebase状態</Text>
-        <Text style={styles.status}>
-          Firebase初期化: {firebaseReady ? '接続設定済み' : '未設定'}
-        </Text>
-        <Text style={styles.item}>
-          現在の大会: {currentTournament ? currentTournament.name : '未作成'}
-        </Text>
-      </View>
-
       {!user ? (
         <View style={styles.card}>
           <Text style={styles.heading}>管理者ログイン</Text>
@@ -292,138 +343,217 @@ export default function AdminScreen() {
         </View>
       ) : (
         <>
+          <TournamentSelector
+            tournaments={tournaments}
+            selectedTournamentId={selectedTournamentId}
+            onSelect={setSelectedTournamentId}
+          />
+
           <View style={styles.card}>
-            <Text style={styles.heading}>ログイン中: {user.email}</Text>
             <AnimatedPressable
-              style={[styles.button, styles.secondaryButton]}
-              onPress={() => {
-                Keyboard.dismiss();
-                if (auth) signOut(auth);
-              }}
+              style={styles.toggleHeader}
+              onPress={() => toggleSection('connection')}
             >
-              <Text style={styles.buttonText}>ログアウト</Text>
+              <Text style={styles.heading}>接続状態</Text>
+              <Text style={styles.toggleIcon}>{sectionOpen.connection ? '▲' : '▼'}</Text>
             </AnimatedPressable>
-          </View>
-
-          <View style={styles.card}>
-            <Text style={styles.heading}>大会登録</Text>
-            <TextInput
-              value={tournamentName}
-              onChangeText={setTournamentName}
-              style={styles.input}
-              placeholder="大会名"
-            />
-            <TextInput
-              value={tournamentDate}
-              onChangeText={setTournamentDate}
-              style={styles.input}
-              placeholder="日付（例: 2026-03-28）"
-            />
-            <AnimatedPressable style={styles.button} onPress={handleCreateTournament} disabled={saving}>
-              <Text style={styles.buttonText}>大会を保存</Text>
-            </AnimatedPressable>
-          </View>
-
-          <View style={styles.card}>
-            <Text style={styles.heading}>勝ち点ルール設定</Text>
-            <RuleInput
-              label="2-0勝ち"
-              value={rules.straightWin}
-              onChange={(value) => setRules((prev) => ({ ...prev, straightWin: value }))}
-            />
-            <RuleInput
-              label="1-1（得点多い）"
-              value={rules.drawHigherScore}
-              onChange={(value) => setRules((prev) => ({ ...prev, drawHigherScore: value }))}
-            />
-            <RuleInput
-              label="1-1（得点少ない）"
-              value={rules.drawLowerScore}
-              onChange={(value) => setRules((prev) => ({ ...prev, drawLowerScore: value }))}
-            />
-            <RuleInput
-              label="1-1（得点同じ）"
-              value={rules.drawEqualScore}
-              onChange={(value) => setRules((prev) => ({ ...prev, drawEqualScore: value }))}
-            />
-            <AnimatedPressable style={styles.button} onPress={handleUpdateRules} disabled={saving}>
-              <Text style={styles.buttonText}>ルールを保存</Text>
-            </AnimatedPressable>
-          </View>
-
-          <View style={styles.card}>
-            <Text style={styles.heading}>チーム登録</Text>
-            <TextInput
-              value={teamName}
-              onChangeText={setTeamName}
-              style={styles.input}
-              placeholder="チーム名"
-            />
-            <AnimatedPressable style={styles.button} onPress={handleCreateTeam} disabled={saving}>
-              <Text style={styles.buttonText}>チームを保存</Text>
-            </AnimatedPressable>
-            {teams.map((team) => (
-              <View key={team.id} style={styles.rowBetween}>
-                <Text style={styles.item}>- {team.name}</Text>
-                <AnimatedPressable
-                  style={styles.deleteButton}
-                  onPress={() => handleDeleteTeam(team.id, team.name)}
-                  disabled={saving}
-                >
-                  <Text style={styles.deleteButtonText}>削除</Text>
-                </AnimatedPressable>
-              </View>
-            ))}
-          </View>
-
-          <View style={styles.card}>
-            <Text style={styles.heading}>対戦カード作成</Text>
-            <Text style={styles.item}>ホームチーム</Text>
-            <View style={styles.teamWrap}>
-              {teams.map((team) => (
-                <TeamButton
-                  key={`home-${team.id}`}
-                  selected={homeTeamId === team.id}
-                  onPress={() => {
-                    Keyboard.dismiss();
-                    setHomeTeamId(team.id);
-                  }}
-                  label={team.name}
-                />
-              ))}
-            </View>
-            <Text style={styles.item}>アウェイチーム</Text>
-            <View style={styles.teamWrap}>
-              {teams.map((team) => (
-                <TeamButton
-                  key={`away-${team.id}`}
-                  selected={awayTeamId === team.id}
-                  onPress={() => {
-                    Keyboard.dismiss();
-                    setAwayTeamId(team.id);
-                  }}
-                  label={team.name}
-                />
-              ))}
-            </View>
-            <AnimatedPressable style={styles.button} onPress={handleCreateMatch} disabled={saving}>
-              <Text style={styles.buttonText}>対戦カードを保存</Text>
-            </AnimatedPressable>
-            {matches.map((match) => (
-              <View key={match.id} style={styles.rowBetween}>
-                <Text style={styles.item}>
-                  {teamNameMap[match.homeTeamId] ?? '未設定'} vs{' '}
-                  {teamNameMap[match.awayTeamId] ?? '未設定'}
+            {sectionOpen.connection ? (
+              <>
+                <Text style={styles.status}>
+                  Firebase接続: {firebaseReady ? '利用可能（設定済み）' : '利用不可（設定未完了）'}
                 </Text>
+                <Text style={styles.item}>
+                  選択中の大会: {currentTournament ? currentTournament.name : '未作成'}
+                </Text>
+                <Text style={styles.item}>
+                  ※ 利用不可の場合は `.env` の Firebase 設定を確認してください
+                </Text>
+              </>
+            ) : null}
+          </View>
+
+          <View style={styles.card}>
+            <AnimatedPressable style={styles.toggleHeader} onPress={() => toggleSection('session')}>
+              <Text style={styles.heading}>ログイン情報</Text>
+              <Text style={styles.toggleIcon}>{sectionOpen.session ? '▲' : '▼'}</Text>
+            </AnimatedPressable>
+            {sectionOpen.session ? (
+              <>
+                <Text style={styles.item}>ログイン中: {user.email}</Text>
                 <AnimatedPressable
-                  style={styles.deleteButton}
-                  onPress={() => handleDeleteMatch(match.id)}
+                  style={[styles.button, styles.secondaryButton]}
+                  onPress={() => {
+                    Keyboard.dismiss();
+                    if (auth) signOut(auth);
+                  }}
+                >
+                  <Text style={styles.buttonText}>ログアウト</Text>
+                </AnimatedPressable>
+              </>
+            ) : null}
+          </View>
+
+          <View style={styles.card}>
+            <AnimatedPressable
+              style={styles.toggleHeader}
+              onPress={() => toggleSection('tournament')}
+            >
+              <Text style={styles.heading}>大会登録</Text>
+              <Text style={styles.toggleIcon}>{sectionOpen.tournament ? '▲' : '▼'}</Text>
+            </AnimatedPressable>
+            {sectionOpen.tournament ? (
+              <>
+                <TextInput
+                  value={tournamentName}
+                  onChangeText={setTournamentName}
+                  style={styles.input}
+                  placeholder="大会名"
+                />
+                <TextInput
+                  value={tournamentDate}
+                  onChangeText={setTournamentDate}
+                  style={styles.input}
+                  placeholder="日付（例: 2026-03-28）"
+                />
+                <AnimatedPressable
+                  style={styles.button}
+                  onPress={handleCreateTournament}
                   disabled={saving}
                 >
-                  <Text style={styles.deleteButtonText}>削除</Text>
+                  <Text style={styles.buttonText}>大会を保存</Text>
                 </AnimatedPressable>
-              </View>
-            ))}
+                <AnimatedPressable
+                  style={[styles.button, styles.dangerButton]}
+                  onPress={handleDeleteTournament}
+                  disabled={saving || !currentTournament}
+                >
+                  <Text style={styles.buttonText}>選択中の大会を削除</Text>
+                </AnimatedPressable>
+              </>
+            ) : null}
+          </View>
+
+          <View style={styles.card}>
+            <AnimatedPressable style={styles.toggleHeader} onPress={() => toggleSection('rules')}>
+              <Text style={styles.heading}>勝ち点ルール設定</Text>
+              <Text style={styles.toggleIcon}>{sectionOpen.rules ? '▲' : '▼'}</Text>
+            </AnimatedPressable>
+            {sectionOpen.rules ? (
+              <>
+                <RuleInput
+                  label="2-0勝ち"
+                  value={rules.straightWin}
+                  onChange={(value) => setRules((prev) => ({ ...prev, straightWin: value }))}
+                />
+                <RuleInput
+                  label="1-1（得点多い）"
+                  value={rules.drawHigherScore}
+                  onChange={(value) => setRules((prev) => ({ ...prev, drawHigherScore: value }))}
+                />
+                <RuleInput
+                  label="1-1（得点少ない）"
+                  value={rules.drawLowerScore}
+                  onChange={(value) => setRules((prev) => ({ ...prev, drawLowerScore: value }))}
+                />
+                <RuleInput
+                  label="1-1（得点同じ）"
+                  value={rules.drawEqualScore}
+                  onChange={(value) => setRules((prev) => ({ ...prev, drawEqualScore: value }))}
+                />
+                <AnimatedPressable style={styles.button} onPress={handleUpdateRules} disabled={saving}>
+                  <Text style={styles.buttonText}>ルールを保存</Text>
+                </AnimatedPressable>
+              </>
+            ) : null}
+          </View>
+
+          <View style={styles.card}>
+            <AnimatedPressable style={styles.toggleHeader} onPress={() => toggleSection('teams')}>
+              <Text style={styles.heading}>チーム登録</Text>
+              <Text style={styles.toggleIcon}>{sectionOpen.teams ? '▲' : '▼'}</Text>
+            </AnimatedPressable>
+            {sectionOpen.teams ? (
+              <>
+                <TextInput
+                  value={teamName}
+                  onChangeText={setTeamName}
+                  style={styles.input}
+                  placeholder="チーム名"
+                />
+                <AnimatedPressable style={styles.button} onPress={handleCreateTeam} disabled={saving}>
+                  <Text style={styles.buttonText}>チームを保存</Text>
+                </AnimatedPressable>
+                {teams.map((team) => (
+                  <View key={team.id} style={styles.rowBetween}>
+                    <Text style={styles.item}>- {team.name}</Text>
+                    <AnimatedPressable
+                      style={styles.deleteButton}
+                      onPress={() => handleDeleteTeam(team.id, team.name)}
+                      disabled={saving}
+                    >
+                      <Text style={styles.deleteButtonText}>削除</Text>
+                    </AnimatedPressable>
+                  </View>
+                ))}
+              </>
+            ) : null}
+          </View>
+
+          <View style={styles.card}>
+            <AnimatedPressable style={styles.toggleHeader} onPress={() => toggleSection('matches')}>
+              <Text style={styles.heading}>対戦カード作成</Text>
+              <Text style={styles.toggleIcon}>{sectionOpen.matches ? '▲' : '▼'}</Text>
+            </AnimatedPressable>
+            {sectionOpen.matches ? (
+              <>
+                <Text style={styles.item}>ホームチーム</Text>
+                <View style={styles.teamWrap}>
+                  {teams.map((team) => (
+                    <TeamButton
+                      key={`home-${team.id}`}
+                      selected={homeTeamId === team.id}
+                      onPress={() => {
+                        Keyboard.dismiss();
+                        setHomeTeamId(team.id);
+                      }}
+                      label={team.name}
+                    />
+                  ))}
+                </View>
+                <Text style={styles.item}>アウェイチーム</Text>
+                <View style={styles.teamWrap}>
+                  {teams.map((team) => (
+                    <TeamButton
+                      key={`away-${team.id}`}
+                      selected={awayTeamId === team.id}
+                      onPress={() => {
+                        Keyboard.dismiss();
+                        setAwayTeamId(team.id);
+                      }}
+                      label={team.name}
+                    />
+                  ))}
+                </View>
+                <AnimatedPressable style={styles.button} onPress={handleCreateMatch} disabled={saving}>
+                  <Text style={styles.buttonText}>対戦カードを保存</Text>
+                </AnimatedPressable>
+                {matches.map((match) => (
+                  <View key={match.id} style={styles.rowBetween}>
+                    <Text style={styles.item}>
+                      {teamNameMap[match.homeTeamId] ?? '未設定'} vs{' '}
+                      {teamNameMap[match.awayTeamId] ?? '未設定'}
+                    </Text>
+                    <AnimatedPressable
+                      style={styles.deleteButton}
+                      onPress={() => handleDeleteMatch(match.id)}
+                      disabled={saving}
+                    >
+                      <Text style={styles.deleteButtonText}>削除</Text>
+                    </AnimatedPressable>
+                  </View>
+                ))}
+              </>
+            ) : null}
           </View>
         </>
       )}
@@ -516,6 +646,9 @@ const styles = StyleSheet.create({
   secondaryButton: {
     backgroundColor: '#4a5568',
   },
+  dangerButton: {
+    backgroundColor: '#c53030',
+  },
   buttonText: {
     color: '#fff',
     fontWeight: '700',
@@ -580,5 +713,14 @@ const styles = StyleSheet.create({
     color: '#c53030',
     fontSize: 12,
     fontWeight: '700',
+  },
+  toggleHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  toggleIcon: {
+    fontSize: 12,
+    color: '#4a5568',
   },
 });
