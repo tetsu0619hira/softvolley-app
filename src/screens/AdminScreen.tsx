@@ -4,12 +4,16 @@ import {
   Keyboard,
   LayoutAnimation,
   Platform,
+  Pressable,
   StyleSheet,
   Text,
   TextInput,
   UIManager,
   View,
 } from 'react-native';
+import DateTimePicker, {
+  DateTimePickerEvent,
+} from '@react-native-community/datetimepicker';
 import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
@@ -50,6 +54,8 @@ export default function AdminScreen() {
   const [password, setPassword] = useState('');
   const [tournamentName, setTournamentName] = useState('');
   const [tournamentDate, setTournamentDate] = useState('');
+  const [tournamentDateValue, setTournamentDateValue] = useState<Date>(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [teamName, setTeamName] = useState('');
   const [homeTeamId, setHomeTeamId] = useState('');
   const [awayTeamId, setAwayTeamId] = useState('');
@@ -132,6 +138,17 @@ export default function AdminScreen() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false);
+    }
+    if (event.type === 'dismissed' || !selectedDate) {
+      return;
+    }
+    setTournamentDateValue(selectedDate);
+    setTournamentDate(formatDate(selectedDate));
   };
 
   const handleUpdateRules = async () => {
@@ -409,12 +426,26 @@ export default function AdminScreen() {
                   style={styles.input}
                   placeholder="大会名"
                 />
-                <TextInput
-                  value={tournamentDate}
-                  onChangeText={setTournamentDate}
+                <Pressable
                   style={styles.input}
-                  placeholder="日付（例: 2026-03-28）"
-                />
+                  onPress={() => {
+                    Keyboard.dismiss();
+                    setShowDatePicker(true);
+                  }}
+                >
+                  <Text style={tournamentDate ? styles.inputText : styles.placeholderText}>
+                    {tournamentDate || '日付をカレンダーから選択'}
+                  </Text>
+                </Pressable>
+                {showDatePicker ? (
+                  <DateTimePicker
+                    value={tournamentDateValue}
+                    mode="date"
+                    display={Platform.OS === 'ios' ? 'inline' : 'default'}
+                    locale="ja-JP"
+                    onChange={handleDateChange}
+                  />
+                ) : null}
                 <AnimatedPressable
                   style={styles.button}
                   onPress={handleCreateTournament}
@@ -539,7 +570,7 @@ export default function AdminScreen() {
                 </AnimatedPressable>
                 {matches.map((match) => (
                   <View key={match.id} style={styles.rowBetween}>
-                    <Text style={styles.item}>
+                    <Text style={styles.rowText} numberOfLines={1} ellipsizeMode="tail">
                       {teamNameMap[match.homeTeamId] ?? '未設定'} vs{' '}
                       {teamNameMap[match.awayTeamId] ?? '未設定'}
                     </Text>
@@ -605,6 +636,13 @@ function TeamButton({
   );
 }
 
+function formatDate(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
 const styles = StyleSheet.create({
   card: {
     backgroundColor: '#ffffff',
@@ -635,6 +673,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 8,
     backgroundColor: '#fff',
+    justifyContent: 'center',
+  },
+  inputText: {
+    fontSize: 14,
+    color: '#1a202c',
+  },
+  placeholderText: {
+    fontSize: 14,
+    color: '#718096',
   },
   button: {
     marginTop: 4,
@@ -701,7 +748,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: 8,
   },
+  rowText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#2d3748',
+  },
   deleteButton: {
+    flexShrink: 0,
     borderWidth: 1,
     borderColor: '#f56565',
     borderRadius: 8,
