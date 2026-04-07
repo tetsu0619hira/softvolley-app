@@ -1,18 +1,24 @@
 {
   "expo": {
-    "name": "softvolley-app",
+    "name": "TwoSetMatch",
     "slug": "softvolley-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.tetsu0619hira.softvolleyapp",
+      "appleTeamId": "69U2Q46558",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "CFBundleDisplayName": "2セットマッチ"
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -29,6 +35,11 @@
     "plugins": [
       "expo-font",
       "@react-native-community/datetimepicker"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "5ae5b65a-86d7-4769-a75b-10e86ee90c51"
+      }
+    }
   }
 }

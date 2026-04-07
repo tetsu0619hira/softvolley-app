@@ -1,4 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
+import MatchupLabel from '../components/MatchupLabel';
 import ScreenContainer from '../components/ScreenContainer';
 import TournamentSelector from '../components/TournamentSelector';
 import { useTournamentData } from '../hooks/useTournamentData';
@@ -11,6 +12,7 @@ export default function MatchesListScreen() {
     currentTournament,
     matches,
     teamNameMap,
+    isInitialLoading,
   } = useTournamentData();
 
   return (
@@ -26,9 +28,9 @@ export default function MatchesListScreen() {
 
       <View style={styles.compactCard}>
         <Text style={styles.compactHeading}>
-          大会: {currentTournament ? currentTournament.name : '未作成'}
+          大会: {isInitialLoading ? '読み込み中...' : currentTournament ? currentTournament.name : '未作成'}
         </Text>
-        <Text style={styles.compactItem}>試合数: {matches.length}</Text>
+        <Text style={styles.compactItem}>試合数: {isInitialLoading ? '-' : matches.length}</Text>
       </View>
 
       <View style={styles.tableCard}>
@@ -40,12 +42,16 @@ export default function MatchesListScreen() {
         </View>
         {matches.map((match) => (
           <View key={match.id} style={styles.tableRow}>
-            <Text style={styles.colTeams}>
-              {teamNameMap[match.homeTeamId] ?? '未設定'} vs {teamNameMap[match.awayTeamId] ?? '未設定'}
-            </Text>
+            <View style={styles.colTeams}>
+              <MatchupLabel
+                home={teamNameMap[match.homeTeamId] ?? '未設定'}
+                away={teamNameMap[match.awayTeamId] ?? '未設定'}
+                textStyle={styles.teamNameText}
+              />
+            </View>
             <Text style={styles.colSets}>
               {match.status === 'completed'
-                ? `${match.setScores[0]?.home}-${match.setScores[0]?.away} / ${match.setScores[1]?.home}-${match.setScores[1]?.away}`
+                ? `${match.setScores[0]?.home}-${match.setScores[0]?.away}/${match.setScores[1]?.home}-${match.setScores[1]?.away}`
                 : '-'}
             </Text>
             <Text style={styles.colResult}>{match.status === 'completed' ? match.outcome : '-'}</Text>
@@ -54,7 +60,12 @@ export default function MatchesListScreen() {
             </Text>
           </View>
         ))}
-        {matches.length === 0 ? (
+        {isInitialLoading ? (
+          <View style={styles.tableRow}>
+            <Text style={styles.emptyText}>データを読み込み中です...</Text>
+          </View>
+        ) : null}
+        {!isInitialLoading && matches.length === 0 ? (
           <View style={styles.tableRow}>
             <Text style={styles.emptyText}>試合がありません。</Text>
           </View>
@@ -94,7 +105,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 10,
-    paddingVertical: 8,
+    paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#edf2f7',
   },
@@ -108,11 +119,14 @@ const styles = StyleSheet.create({
   },
   colTeams: {
     flex: 1,
+    paddingRight: 2,
+  },
+  teamNameText: {
     fontSize: 12,
     color: '#2d3748',
   },
   colSets: {
-    width: 90,
+    width: 86,
     fontSize: 12,
     textAlign: 'center',
     color: '#2d3748',
@@ -124,9 +138,9 @@ const styles = StyleSheet.create({
     color: '#2d3748',
   },
   colPoints: {
-    width: 52,
+    width: 48,
     fontSize: 12,
-    textAlign: 'right',
+    textAlign: 'center',
     color: '#2d3748',
   },
   emptyText: {

@@ -1,15 +1,13 @@
-import { useCallback, ReactNode, useRef } from 'react';
-import { useFocusEffect } from '@react-navigation/native';
+import { ReactNode } from 'react';
 import {
-  Animated,
   KeyboardAvoidingView,
   Platform,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface ScreenContainerProps {
   title: string;
@@ -22,30 +20,8 @@ export default function ScreenContainer({
   subtitle,
   children,
 }: ScreenContainerProps) {
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(8)).current;
-
-  useFocusEffect(
-    useCallback(() => {
-      fadeAnim.setValue(0);
-      slideAnim.setValue(8);
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 180,
-          useNativeDriver: true,
-        }),
-        Animated.timing(slideAnim, {
-          toValue: 0,
-          duration: 180,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    }, [fadeAnim, slideAnim]),
-  );
-
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <KeyboardAvoidingView
         style={styles.keyboardWrap}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -55,16 +31,9 @@ export default function ScreenContainer({
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
         >
-          <Animated.View
-            style={{
-              opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }],
-            }}
-          >
-            <Text style={styles.title}>{title}</Text>
-            {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
-            <View style={styles.body}>{children}</View>
-          </Animated.View>
+          <Text style={styles.title}>{title}</Text>
+          {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+          <View style={styles.body}>{children}</View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

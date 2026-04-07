@@ -2,13 +2,17 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   Keyboard,
+  Modal,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
 import { onAuthStateChanged, User } from 'firebase/auth';
+import { MaterialIcons } from '@expo/vector-icons';
 import AnimatedPressable from '../components/AnimatedPressable';
+import MatchupLabel from '../components/MatchupLabel';
 import ScreenContainer from '../components/ScreenContainer';
 import TournamentSelector from '../components/TournamentSelector';
 import { auth } from '../firebase/config';
@@ -24,13 +28,16 @@ export default function MatchResultInputScreen() {
     currentTournament,
     matches,
     teamNameMap,
+    isInitialLoading,
   } = useTournamentData();
   const [user, setUser] = useState<User | null>(null);
+  const [authResolved, setAuthResolved] = useState(!auth);
   const [matchId, setMatchId] = useState('');
   const [set1Home, setSet1Home] = useState('');
   const [set1Away, setSet1Away] = useState('');
   const [set2Home, setSet2Home] = useState('');
   const [set2Away, setSet2Away] = useState('');
+  const [showMatchPicker, setShowMatchPicker] = useState(false);
   const set1HomeRef = useRef<TextInput | null>(null);
   const set1AwayRef = useRef<TextInput | null>(null);
   const set2HomeRef = useRef<TextInput | null>(null);
@@ -38,20 +45,24 @@ export default function MatchResultInputScreen() {
 
   useEffect(() => {
     if (!auth) return;
-    const unsub = onAuthStateChanged(auth, (value) => setUser(value));
+    const unsub = onAuthStateChanged(auth, (value) => {
+      setUser(value);
+      setAuthResolved(true);
+    });
     return () => unsub();
   }, []);
 
+  const isScreenLoading = isInitialLoading || !authResolved;
   const canViewCompleted = Boolean(user);
   const hasTournament = Boolean(currentTournament);
   const visibleMatches = useMemo(
     () =>
-      hasTournament
+      hasTournament && !isScreenLoading
         ? canViewCompleted
           ? matches
           : matches.filter((item) => item.status !== 'completed')
         : [],
-    [canViewCompleted, hasTournament, matches],
+    [canViewCompleted, hasTournament, isScreenLoading, matches],
   );
 
   const selectedMatch = useMemo(
@@ -132,7 +143,7 @@ export default function MatchResultInputScreen() {
         onSelect={setSelectedTournamentId}
       />
 
-      {!hasTournament ? (
+      {!isScreenLoading && !hasTournament ? (
         <View style={styles.card}>
           <Text style={styles.item}>
             大会データがありません。管理者画面で大会を作成してから結果入力をご利用ください。
@@ -140,44 +151,60 @@ export default function MatchResultInputScreen() {
         </View>
       ) : null}
 
-      {hasTournament ? (
+      {isScreenLoading ? (
+        <View style={styles.card}>
+          <Text style={styles.item}>データを読み込み中です...</Text>
+        </View>
+      ) : null}
+
+      {!isScreenLoading && hasTournament ? (
         <>
           <View style={styles.card}>
             <Text style={styles.heading}>対象試合を選択</Text>
-            {visibleMatches.map((match) => (
-              <AnimatedPressable
-                key={match.id}
-                style={[styles.matchButton, match.id === matchId && styles.matchButtonSelected]}
-                onPress={() => {
-                  Keyboard.dismiss();
-                  setMatchId(match.id);
-                }}
-              >
-                <Text style={styles.item}>
-                  {teamNameMap[match.homeTeamId] ?? '未設定'} vs {teamNameMap[match.awayTeamId] ?? '未設定'}
-                </Text>
-                <Text style={styles.subItem}>
-                  {match.status === 'completed' ? '入力済み（再入力で上書き）' : '未入力'}
-                </Text>
-              </AnimatedPressable>
-            ))}
-            {visibleMatches.length === 0 ? (
-              <Text style={styles.item}>試合がありません。</Text>
-            ) : null}
+            <AnimatedPressable
+              style={styles.selectorTrigger}
+              onPress={() => {
+                Keyboard.dismiss();
+                setShowMatchPicker(true);
+              }}
+            >
+              <View style={styles.selectorContent}>
+                <View style={styles.selectorTextWrap}>
+                  {selectedMatch ? (
+                    <MatchupLabel
+                      home={teamNameMap[selectedMatch.homeTeamId] ?? '未設定'}
+                      away={teamNameMap[selectedMatch.awayTeamId] ?? '未設定'}
+                      textStyle={styles.item}
+                    />
+                  ) : (
+                    <Text style={styles.item}>試合を選択してください</Text>
+                  )}
+                </View>
+                <MaterialIcons name="keyboard-arrow-down" size={22} color="#4a5568" />
+              </View>
+            </AnimatedPressable>
+            <Text style={styles.subItem}>
+              {selectedMatch
+                ? selectedMatch.status === 'completed'
+                  ? '入力済み（再入力で上書き）'
+                  : '未入力'
+                : `${visibleMatches.length} 試合から選択（タップして選択）`}
+            </Text>
+            {visibleMatches.length === 0 ? <Text style={styles.item}>試合がありません。</Text> : null}
           </View>
 
           <View style={styles.card}>
             <Text style={styles.heading}>スコア入力</Text>
             <View style={styles.row}>
-              <Text style={styles.item}>1セット目</Text>
+              <Text style={styles.setLabel}>1セット目</Text>
               <ScoreInput inputRef={set1HomeRef} value={set1Home} onChange={setSet1Home} />
-              <Text style={styles.item}>:</Text>
+              <Text style={styles.colon}>:</Text>
               <ScoreInput inputRef={set1AwayRef} value={set1Away} onChange={setSet1Away} />
             </View>
             <View style={styles.row}>
-              <Text style={styles.item}>2セット目</Text>
+              <Text style={styles.setLabel}>2セット目</Text>
               <ScoreInput inputRef={set2HomeRef} value={set2Home} onChange={setSet2Home} />
-              <Text style={styles.item}>:</Text>
+              <Text style={styles.colon}>:</Text>
               <ScoreInput inputRef={set2AwayRef} value={set2Away} onChange={setSet2Away} />
             </View>
             <Text style={styles.item}>- 15点先取、デュース時は17点上限</Text>
@@ -192,6 +219,43 @@ export default function MatchResultInputScreen() {
           </View>
         </>
       ) : null}
+
+      <Modal
+        visible={showMatchPicker}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowMatchPicker(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <Text style={styles.heading}>試合を選択</Text>
+            <ScrollView style={styles.modalList} contentContainerStyle={styles.modalListContent}>
+              {visibleMatches.map((match) => (
+                <AnimatedPressable
+                  key={match.id}
+                  style={[styles.matchButton, match.id === matchId && styles.matchButtonSelected]}
+                  onPress={() => {
+                    setMatchId(match.id);
+                    setShowMatchPicker(false);
+                  }}
+                >
+                  <MatchupLabel
+                    home={teamNameMap[match.homeTeamId] ?? '未設定'}
+                    away={teamNameMap[match.awayTeamId] ?? '未設定'}
+                    textStyle={styles.item}
+                  />
+                  <Text style={styles.subItem}>
+                    {match.status === 'completed' ? '入力済み（再入力で上書き）' : '未入力'}
+                  </Text>
+                </AnimatedPressable>
+              ))}
+            </ScrollView>
+            <AnimatedPressable style={[styles.button, styles.closeButton]} onPress={() => setShowMatchPicker(false)}>
+              <Text style={styles.buttonText}>閉じる</Text>
+            </AnimatedPressable>
+          </View>
+        </View>
+      </Modal>
     </ScreenContainer>
   );
 }
@@ -244,6 +308,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
+  setLabel: {
+    width: 64,
+    fontSize: 14,
+    color: '#2d3748',
+  },
+  colon: {
+    width: 10,
+    textAlign: 'center',
+    fontSize: 14,
+    color: '#2d3748',
+  },
   scoreInput: {
     width: 56,
     borderWidth: 1,
@@ -260,9 +335,45 @@ const styles = StyleSheet.create({
     padding: 10,
     backgroundColor: '#fff',
   },
+  selectorTrigger: {
+    borderWidth: 1,
+    borderColor: '#cbd5e0',
+    borderRadius: 8,
+    minHeight: 40,
+    paddingHorizontal: 10,
+    justifyContent: 'center',
+    backgroundColor: '#fff',
+  },
+  selectorContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  selectorTextWrap: {
+    flex: 1,
+  },
   matchButtonSelected: {
     borderColor: '#1155cc',
     backgroundColor: '#e6efff',
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+    justifyContent: 'center',
+    padding: 16,
+  },
+  modalCard: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 14,
+    maxHeight: '70%',
+    gap: 10,
+  },
+  modalList: {
+    maxHeight: 360,
+  },
+  modalListContent: {
+    gap: 8,
   },
   button: {
     marginTop: 6,
@@ -274,5 +385,8 @@ const styles = StyleSheet.create({
   buttonText: {
     color: '#fff',
     fontWeight: '700',
+  },
+  closeButton: {
+    backgroundColor: '#4a5568',
   },
 });

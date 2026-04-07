@@ -23,6 +23,7 @@ import {
 import { useEffect } from 'react';
 import ScreenContainer from '../components/ScreenContainer';
 import AnimatedPressable from '../components/AnimatedPressable';
+import MatchupLabel from '../components/MatchupLabel';
 import TournamentSelector from '../components/TournamentSelector';
 import { DEFAULT_POINT_RULES, normalizePointRules } from '../constants/defaultRules';
 import { auth, firebaseConfigReady } from '../firebase/config';
@@ -570,10 +571,13 @@ export default function AdminScreen() {
                 </AnimatedPressable>
                 {matches.map((match) => (
                   <View key={match.id} style={styles.rowBetween}>
-                    <Text style={styles.rowText} numberOfLines={1} ellipsizeMode="tail">
-                      {teamNameMap[match.homeTeamId] ?? '未設定'} vs{' '}
-                      {teamNameMap[match.awayTeamId] ?? '未設定'}
-                    </Text>
+                    <View style={styles.rowText}>
+                      <MatchupLabel
+                        home={teamNameMap[match.homeTeamId] ?? '未設定'}
+                        away={teamNameMap[match.awayTeamId] ?? '未設定'}
+                        textStyle={styles.item}
+                      />
+                    </View>
                     <AnimatedPressable
                       style={styles.deleteButton}
                       onPress={() => handleDeleteMatch(match.id)}
@@ -750,8 +754,6 @@ const styles = StyleSheet.create({
   },
   rowText: {
     flex: 1,
-    fontSize: 14,
-    color: '#2d3748',
   },
   deleteButton: {
     flexShrink: 0,

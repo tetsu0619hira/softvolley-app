@@ -7,10 +7,17 @@ export function useTournamentData() {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
+  const [hasLoadedTournaments, setHasLoadedTournaments] = useState(false);
+  const [hasLoadedTeams, setHasLoadedTeams] = useState(false);
+  const [hasLoadedMatches, setHasLoadedMatches] = useState(false);
   const { selectedTournamentId, setSelectedTournamentId } = useTournamentSelection();
 
   useEffect(() => {
-    const unsub = subscribeTournaments(setTournaments);
+    setHasLoadedTournaments(false);
+    const unsub = subscribeTournaments((items) => {
+      setTournaments(items);
+      setHasLoadedTournaments(true);
+    });
     return () => unsub();
   }, []);
 
@@ -31,8 +38,26 @@ export function useTournamentData() {
   }, [selectedTournamentId, tournaments]);
 
   useEffect(() => {
-    const unsubTeams = subscribeTeams(currentTournament?.id ?? null, setTeams);
-    const unsubMatches = subscribeMatches(currentTournament?.id ?? null, setMatches);
+    const tournamentId = currentTournament?.id ?? null;
+
+    if (!tournamentId) {
+      setTeams([]);
+      setMatches([]);
+      setHasLoadedTeams(true);
+      setHasLoadedMatches(true);
+      return;
+    }
+
+    setHasLoadedTeams(false);
+    setHasLoadedMatches(false);
+    const unsubTeams = subscribeTeams(tournamentId, (items) => {
+      setTeams(items);
+      setHasLoadedTeams(true);
+    });
+    const unsubMatches = subscribeMatches(tournamentId, (items) => {
+      setMatches(items);
+      setHasLoadedMatches(true);
+    });
 
     return () => {
       unsubTeams();
@@ -47,6 +72,15 @@ export function useTournamentData() {
     }, {});
   }, [teams]);
 
+  const hasSelectedTournament = useMemo(
+    () => tournaments.some((item) => item.id === selectedTournamentId),
+    [selectedTournamentId, tournaments],
+  );
+  const waitingForInitialSelection =
+    hasLoadedTournaments && tournaments.length > 0 && !hasSelectedTournament;
+  const isInitialLoading =
+    !hasLoadedTournaments || waitingForInitialSelection || !hasLoadedTeams || !hasLoadedMatches;
+
   return {
     tournaments,
     selectedTournamentId,
@@ -55,5 +89,6 @@ export function useTournamentData() {
     teams,
     matches,
     teamNameMap,
+    isInitialLoading,
   };
 }

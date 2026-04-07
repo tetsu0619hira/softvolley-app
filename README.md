@@ -111,6 +111,36 @@ npm run web
 npm run typecheck
 ```
 
+## アイコン生成プロンプト（Gemini使用）
+
+**スタイリッシュ版（現在使用中）**
+
+Create a sleek and stylish mobile app icon for a volleyball tournament app.
+- Background: deep black with a subtle dark gradient
+- Main elements: a volleyball with yellow as the main color and blue accents, a minimalist net and poles in pure white, and the bold text "2SET" in a modern sans-serif font
+- Style: clean, premium, high contrast, smooth shapes with sharp edges, no pixel art
+- Color palette: black, gold/yellow, electric blue, white
+- Typography: "2SET" in a strong modern font, prominently placed
+- Size: square format, suitable for iOS app icon
+- No white border or padding. Background color must fill the entire image edge to edge.
+
+**ドット絵版**
+
+Create a mobile app icon in retro pixel art style (8-bit Famicom aesthetic).
+- Background: dark navy or black
+- Main elements: a volleyball with yellow as the main color and blue accents, a net in the center, and the text "2SET" in bold pixel font
+- Color palette: limited retro colors (yellow, blue, white) like an 8-bit game
+- Style: chunky pixels, high contrast, no gradients, flat retro look
+- Size: square format, suitable for iOS app icon
+- No white border or padding. Background color must fill the entire image edge to edge.
+
+## TestFlight配布リンク
+
+https://testflight.apple.com/join/hnHrZZQr
+
+- iPhoneにTestFlightアプリをインストール後、上記URLをタップするだけでインストール可能
+- App Store Connect: https://appstoreconnect.apple.com/apps/6761749295/testflight/ios
+
 ## ビルド・配布（Expo/EAS）
 
 配布用ビルドは EAS を使用します。

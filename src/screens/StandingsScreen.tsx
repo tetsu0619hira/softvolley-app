@@ -12,6 +12,7 @@ export default function StandingsScreen() {
     currentTournament,
     teams,
     matches,
+    isInitialLoading,
   } = useTournamentData();
 
   const standings = useMemo(() => {
@@ -77,7 +78,7 @@ export default function StandingsScreen() {
   return (
     <ScreenContainer
       title="順位表"
-      subtitle={`勝ち点合計でソート（大会: ${currentTournament?.name ?? '未作成'}）`}
+      subtitle={`勝ち点合計でソート（大会: ${isInitialLoading ? '読み込み中...' : currentTournament?.name ?? '未作成'}）`}
     >
       <TournamentSelector
         tournaments={tournaments}
@@ -124,7 +125,12 @@ export default function StandingsScreen() {
           </View>
           );
         })}
-        {standings.length === 0 ? (
+        {isInitialLoading ? (
+          <View style={styles.tableRow}>
+            <Text style={styles.emptyText}>データを読み込み中です...</Text>
+          </View>
+        ) : null}
+        {!isInitialLoading && standings.length === 0 ? (
           <View style={styles.tableRow}>
             <Text style={styles.emptyText}>大会・チーム登録後に順位表が表示されます。</Text>
           </View>
