@@ -12,7 +12,7 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "com.tetsu0619hira.softvolleyapp",
       "appleTeamId": "69U2Q46558",
       "infoPlist": {

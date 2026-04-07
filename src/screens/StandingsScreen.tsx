@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import ScreenContainer from '../components/ScreenContainer';
 import TournamentSelector from '../components/TournamentSelector';
+import { useDelayedLoading } from '../hooks/useDelayedLoading';
 import { useTournamentData } from '../hooks/useTournamentData';
 
 export default function StandingsScreen() {
@@ -14,6 +15,7 @@ export default function StandingsScreen() {
     matches,
     isInitialLoading,
   } = useTournamentData();
+  const showLoadingText = useDelayedLoading(isInitialLoading);
 
   const standings = useMemo(() => {
     const table = teams.map((team) => ({
@@ -78,7 +80,7 @@ export default function StandingsScreen() {
   return (
     <ScreenContainer
       title="順位表"
-      subtitle={`勝ち点合計でソート（大会: ${isInitialLoading ? '読み込み中...' : currentTournament?.name ?? '未作成'}）`}
+      subtitle={`勝ち点合計でソート（大会: ${showLoadingText ? '読み込み中...' : currentTournament?.name ?? '未作成'}）`}
     >
       <TournamentSelector
         tournaments={tournaments}
@@ -87,54 +89,74 @@ export default function StandingsScreen() {
       />
       <View style={styles.compactCard}>
         <Text style={styles.compactHeading}>勝ち点ルール</Text>
-        <Text style={styles.compactItem}>2-0勝ち {currentTournament?.pointRules.straightWin ?? '-'}点</Text>
-        <Text style={styles.compactItem}>
-          1-1（得点多い） {currentTournament?.pointRules.drawHigherScore ?? '-'}点
-        </Text>
-        <Text style={styles.compactItem}>
-          1-1（得点少ない） {currentTournament?.pointRules.drawLowerScore ?? '-'}点
-        </Text>
-        <Text style={styles.compactItem}>0-2負け 0点</Text>
-        <Text style={styles.compactItem}>
-          1-1（得点同じ） {currentTournament?.pointRules.drawEqualScore ?? '-'}点
-        </Text>
+        <View style={styles.ruleWrap}>
+          <View style={styles.rulePill}>
+            <Text style={styles.rulePillKey}>2-0勝ち</Text>
+            <Text style={styles.rulePillValue}>{currentTournament?.pointRules.straightWin ?? '-'}点</Text>
+          </View>
+          <View style={styles.rulePill}>
+            <Text style={styles.rulePillKey}>1-1（得点多い）</Text>
+            <Text style={styles.rulePillValue}>{currentTournament?.pointRules.drawHigherScore ?? '-'}点</Text>
+          </View>
+          <View style={styles.rulePill}>
+            <Text style={styles.rulePillKey}>1-1（得点少ない）</Text>
+            <Text style={styles.rulePillValue}>{currentTournament?.pointRules.drawLowerScore ?? '-'}点</Text>
+          </View>
+          <View style={styles.rulePill}>
+            <Text style={styles.rulePillKey}>1-1（得点同じ）</Text>
+            <Text style={styles.rulePillValue}>{currentTournament?.pointRules.drawEqualScore ?? '-'}点</Text>
+          </View>
+          <View style={styles.rulePill}>
+            <Text style={styles.rulePillKey}>0-2負け</Text>
+            <Text style={styles.rulePillValue}>0点</Text>
+          </View>
+        </View>
       </View>
 
-      <View style={styles.tableCard}>
+      <View style={styles.tableCardShadow}>
+        <View style={styles.tableCard}>
         <View style={[styles.tableRow, styles.headerRow]}>
-          <Text style={[styles.colRank, styles.headerText]}>順位</Text>
-          <Text style={[styles.colTeam, styles.headerText]}>チーム名</Text>
-          <Text style={[styles.colNum, styles.headerText]}>勝ち点</Text>
-          <Text style={[styles.colNum, styles.headerText]}>総得点</Text>
-          <Text style={[styles.colNum, styles.headerText]}>総失点</Text>
+          <Text style={[styles.colRank, styles.headerCell, styles.headerText]}>順位</Text>
+          <Text style={[styles.colTeam, styles.headerCell, styles.headerTeamCell, styles.headerText]}>
+            チーム名
+          </Text>
+          <Text style={[styles.colNum, styles.headerCell, styles.headerText]}>勝ち点</Text>
+          <Text style={[styles.colNum, styles.headerCell, styles.headerText]}>総得点</Text>
+          <Text style={[styles.colNum, styles.headerCell, styles.headerText]}>総失点</Text>
         </View>
-        {rankedStandings.map((row, index) => {
-          const rankNumber = row.rank === 0 ? rankedStandings[index - 1].rank : row.rank;
-          const isTie = tieRankSet.has(rankNumber);
-          return (
-          <View key={row.teamId} style={styles.tableRow}>
-            <View style={[styles.rankBadge, isTie && styles.rankBadgeTie]}>
-              <Text style={[styles.rankBadgeText, isTie && styles.rankBadgeTextTie]}>
-                {rankNumber}
-              </Text>
-            </View>
-            <Text style={styles.colTeam}>{row.teamName}</Text>
-            <Text style={styles.colNum}>{row.points}</Text>
-            <Text style={styles.colNum}>{row.scored}</Text>
-            <Text style={styles.colNum}>{row.conceded}</Text>
-          </View>
-          );
-        })}
-        {isInitialLoading ? (
-          <View style={styles.tableRow}>
+        {(() => {
+          return rankedStandings.map((row, index) => {
+            const rankNumber = row.rank === 0 ? rankedStandings[index - 1].rank : row.rank;
+            const isTie = tieRankSet.has(rankNumber);
+            return (
+              <View
+                key={row.teamId}
+                style={[styles.tableRow, styles.bodyRow]}
+              >
+                <View style={[styles.rankBadge, isTie && styles.rankBadgeTie]}>
+                  <Text style={[styles.rankBadgeText, isTie && styles.rankBadgeTextTie]}>
+                    {rankNumber}
+                  </Text>
+                </View>
+                <Text style={styles.colTeam}>{row.teamName}</Text>
+                <Text style={styles.colNum}>{row.points}</Text>
+                <Text style={styles.colNum}>{row.scored}</Text>
+                <Text style={styles.colNum}>{row.conceded}</Text>
+              </View>
+            );
+          });
+        })()}
+        {showLoadingText ? (
+          <View style={[styles.tableRow, styles.bodyRow]}>
             <Text style={styles.emptyText}>データを読み込み中です...</Text>
           </View>
         ) : null}
         {!isInitialLoading && standings.length === 0 ? (
-          <View style={styles.tableRow}>
+          <View style={[styles.tableRow, styles.bodyRow]}>
             <Text style={styles.emptyText}>大会・チーム登録後に順位表が表示されます。</Text>
           </View>
         ) : null}
+        </View>
       </View>
 
       <Text style={styles.footnote}>
@@ -146,91 +168,173 @@ export default function StandingsScreen() {
 
 const styles = StyleSheet.create({
   compactCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    paddingHorizontal: 12,
+    backgroundColor: '#f6f9ff',
+    borderRadius: 28,
+    paddingHorizontal: 18,
     paddingVertical: 10,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderTopColor: '#ffffff',
+    borderLeftColor: '#ffffff',
+    borderRightColor: '#d8e3f5',
+    borderBottomColor: '#d8e3f5',
     gap: 4,
+    shadowColor: '#8ba4cc',
+    shadowOffset: { width: 0, height: 14 },
+    shadowOpacity: 0.34,
+    shadowRadius: 20,
+    elevation: 12,
   },
   compactHeading: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#1a202c',
+    color: '#24324b',
   },
-  compactItem: {
-    fontSize: 12,
-    color: '#2d3748',
+  ruleWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  rulePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 12,
+    backgroundColor: '#f2f7ff',
+    borderWidth: 1,
+    borderTopColor: '#ffffff',
+    borderLeftColor: '#ffffff',
+    borderRightColor: '#d9e4f7',
+    borderBottomColor: '#d9e4f7',
+  },
+  rulePillKey: {
+    fontSize: 10,
+    color: '#415a85',
+  },
+  rulePillValue: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#2f4f82',
+  },
+  tableCardShadow: {
+    backgroundColor: '#f6f9ff',
+    borderRadius: 28,
+    borderWidth: 1,
+    borderTopColor: '#ffffff',
+    borderLeftColor: '#ffffff',
+    borderRightColor: '#d8e3f5',
+    borderBottomWidth: 0,
+    shadowColor: '#8ba4cc',
+    shadowOffset: { width: 0, height: 14 },
+    shadowOpacity: 0.34,
+    shadowRadius: 20,
+    elevation: 12,
   },
   tableCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-    overflow: 'hidden',
+    borderRadius: 28,
+    overflow: 'visible',
+    backgroundColor: '#f6f9ff',
+    paddingVertical: 6,
   },
   tableRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#edf2f7',
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+  },
+  bodyRow: {
+    marginHorizontal: 8,
+    marginBottom: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderTopColor: '#ffffff',
+    borderLeftColor: '#ffffff',
+    borderRightColor: '#d9e4f7',
+    borderBottomColor: '#d9e4f7',
+    backgroundColor: '#f2f7ff',
+    shadowColor: '#9eb5d9',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 6,
   },
   headerRow: {
-    backgroundColor: '#f8fafc',
+    backgroundColor: 'transparent',
+    gap: 6,
+    marginHorizontal: 8,
+    marginBottom: 6,
   },
   headerText: {
-    fontSize: 11,
-    fontWeight: '500',
-    color: '#4a5568',
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#3f5b8b',
+    textAlign: 'center',
+  },
+  headerCell: {
+    borderWidth: 1,
+    borderTopColor: '#ffffff',
+    borderLeftColor: '#ffffff',
+    borderRightColor: '#d9e4f7',
+    borderBottomColor: '#d9e4f7',
+    backgroundColor: '#f2f7ff',
+    borderRadius: 12,
+    paddingVertical: 4,
+    shadowColor: '#9eb5d9',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  headerTeamCell: {
+    textAlign: 'left',
+    paddingLeft: 10,
   },
   colRank: {
     width: 36,
     fontSize: 12,
-    color: '#2d3748',
+    color: '#465777',
   },
   rankBadge: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
-    backgroundColor: '#edf2f7',
+    backgroundColor: '#d6e5fb',
   },
   rankBadgeTie: {
-    backgroundColor: '#fef08a',
+    backgroundColor: '#ffe89a',
   },
   rankBadgeText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#2d3748',
+    color: '#465777',
   },
   rankBadgeTextTie: {
-    color: '#744210',
+    color: '#8a5a1f',
   },
   colTeam: {
     flex: 1,
     fontSize: 12,
-    color: '#2d3748',
+    color: '#465777',
   },
   colNum: {
     width: 52,
     textAlign: 'right',
     fontSize: 12,
-    color: '#2d3748',
+    color: '#465777',
   },
   emptyText: {
     flex: 1,
     fontSize: 12,
     textAlign: 'center',
-    color: '#2d3748',
+    color: '#5a6c90',
   },
   footnote: {
     fontSize: 11,
-    color: '#4a5568',
-    paddingHorizontal: 4,
+    color: '#6b7a99',
+    paddingHorizontal: 8,
   },
 });

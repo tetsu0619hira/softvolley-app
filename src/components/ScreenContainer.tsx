@@ -32,7 +32,7 @@ export default function ScreenContainer({
           keyboardDismissMode="on-drag"
         >
           <Text style={styles.title}>{title}</Text>
-          {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+          {subtitle && false ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
           <View style={styles.body}>{children}</View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -43,7 +43,7 @@ export default function ScreenContainer({
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#f7f9fc',
+    backgroundColor: '#eef3fb',
   },
   keyboardWrap: {
     flex: 1,
@@ -53,17 +53,17 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   title: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: '700',
-    color: '#1a202c',
+    color: '#21314d',
   },
   subtitle: {
-    marginTop: 6,
+    marginTop: 10,
     fontSize: 14,
-    color: '#4a5568',
+    color: '#6279a3',
   },
   body: {
-    marginTop: 16,
-    gap: 12,
+    marginTop: 10,
+    gap: 16,
   },
 });

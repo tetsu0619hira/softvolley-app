@@ -7,12 +7,14 @@ interface TournamentSelectorProps {
   tournaments: Tournament[];
   selectedTournamentId: string | null;
   onSelect: (id: string) => void;
+  footerText?: string;
 }
 
 export default function TournamentSelector({
   tournaments,
   selectedTournamentId,
   onSelect,
+  footerText,
 }: TournamentSelectorProps) {
   return (
     <View style={styles.card}>
@@ -35,6 +37,7 @@ export default function TournamentSelector({
           ))}
         </View>
       )}
+      {footerText ? <Text style={styles.footerText}>{footerText}</Text> : null}
     </View>
   );
 }
@@ -91,8 +94,8 @@ function AnimatedTournamentChip({
       }}
     >
       <AnimatedPressable style={[styles.chip, selected && styles.chipSelected]} onPress={onPress}>
-        <Text style={styles.chipText}>{name}</Text>
-        <Text style={styles.chipSubText}>{date}</Text>
+        <Text style={[styles.chipText, selected && styles.chipTextSelected]}>{name}</Text>
+        <Text style={[styles.chipSubText, selected && styles.chipSubTextSelected]}>{date}</Text>
       </AnimatedPressable>
     </Animated.View>
   );
@@ -100,48 +103,85 @@ function AnimatedTournamentChip({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: '#f6f9ff',
+    borderRadius: 28,
+    padding: 20,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
-    gap: 8,
+    borderTopColor: '#ffffff',
+    borderLeftColor: '#ffffff',
+    borderRightColor: '#d8e3f5',
+    borderBottomColor: '#d8e3f5',
+    gap: 12,
+    shadowColor: '#8ba4cc',
+    shadowOffset: { width: 0, height: 14 },
+    shadowOpacity: 0.34,
+    shadowRadius: 20,
+    elevation: 12,
   },
   heading: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#1a202c',
+    color: '#24324b',
   },
   item: {
     fontSize: 14,
-    color: '#2d3748',
+    color: '#465777',
   },
   wrap: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 12,
   },
   chip: {
     borderWidth: 1,
-    borderColor: '#cbd5e0',
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    backgroundColor: '#fff',
+    borderTopColor: '#ffffff',
+    borderLeftColor: '#ffffff',
+    borderRightColor: '#d9e4f7',
+    borderBottomColor: '#d9e4f7',
+    borderRadius: 24,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    backgroundColor: '#f7faff',
     minWidth: 120,
+    shadowColor: '#9eb5d9',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 7,
   },
   chipSelected: {
-    borderColor: '#1155cc',
-    backgroundColor: '#e6efff',
+    borderTopColor: '#f2f8ff',
+    borderLeftColor: '#f2f8ff',
+    borderRightColor: '#6b9fe2',
+    borderBottomColor: '#6b9fe2',
+    backgroundColor: '#d7e9ff',
+    shadowColor: '#4a90e2',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.44,
+    shadowRadius: 16,
+    elevation: 11,
   },
   chipText: {
     fontSize: 13,
-    color: '#1a202c',
+    color: '#6d7f9f',
     fontWeight: '700',
+  },
+  chipTextSelected: {
+    color: '#1d4f90',
   },
   chipSubText: {
     fontSize: 11,
-    color: '#4a5568',
+    color: '#8ea0bf',
+    marginTop: 3,
+  },
+  chipSubTextSelected: {
+    color: '#356eb8',
+    fontWeight: '600',
+  },
+  footerText: {
     marginTop: 2,
+    fontSize: 12,
+    color: '#415a85',
+    fontWeight: '600',
   },
 });

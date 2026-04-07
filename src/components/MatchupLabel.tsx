@@ -28,12 +28,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     width: '100%',
-    gap: 6,
+    gap: 8,
   },
   teamText: {
     flex: 1,
     fontSize: 13,
-    color: '#2d3748',
+    color: '#465777',
   },
   homeText: {
     textAlign: 'right',
@@ -42,8 +42,8 @@ const styles = StyleSheet.create({
     textAlign: 'left',
   },
   iconWrap: {
-    width: 12,
-    height: 12,
+    width: 14,
+    height: 14,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,

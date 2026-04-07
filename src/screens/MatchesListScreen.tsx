@@ -2,6 +2,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import MatchupLabel from '../components/MatchupLabel';
 import ScreenContainer from '../components/ScreenContainer';
 import TournamentSelector from '../components/TournamentSelector';
+import { useDelayedLoading } from '../hooks/useDelayedLoading';
 import { useTournamentData } from '../hooks/useTournamentData';
 
 export default function MatchesListScreen() {
@@ -14,6 +15,7 @@ export default function MatchesListScreen() {
     teamNameMap,
     isInitialLoading,
   } = useTournamentData();
+  const showLoadingText = useDelayedLoading(isInitialLoading);
 
   return (
     <ScreenContainer
@@ -26,22 +28,14 @@ export default function MatchesListScreen() {
         onSelect={setSelectedTournamentId}
       />
 
-      <View style={styles.compactCard}>
-        <Text style={styles.compactHeading}>
-          大会: {isInitialLoading ? '読み込み中...' : currentTournament ? currentTournament.name : '未作成'}
-        </Text>
-        <Text style={styles.compactItem}>試合数: {isInitialLoading ? '-' : matches.length}</Text>
-      </View>
-
-      <View style={styles.tableCard}>
+      <View style={styles.tableCardShadow}>
+        <View style={styles.tableCard}>
         <View style={[styles.tableRow, styles.headerRow]}>
-          <Text style={[styles.colTeams, styles.headerText]}>対戦カード</Text>
-          <Text style={[styles.colSets, styles.headerText]}>セット</Text>
-          <Text style={[styles.colResult, styles.headerText]}>結果</Text>
-          <Text style={[styles.colPoints, styles.headerText]}>勝ち点</Text>
+          <Text style={[styles.colTeams, styles.headerCell, styles.headerText]}>対戦カード</Text>
+          <Text style={[styles.colSets, styles.headerCell, styles.headerText]}>セット</Text>
         </View>
         {matches.map((match) => (
-          <View key={match.id} style={styles.tableRow}>
+          <View key={match.id} style={[styles.tableRow, styles.bodyRow]}>
             <View style={styles.colTeams}>
               <MatchupLabel
                 home={teamNameMap[match.homeTeamId] ?? '未設定'}
@@ -51,102 +45,115 @@ export default function MatchesListScreen() {
             </View>
             <Text style={styles.colSets}>
               {match.status === 'completed'
-                ? `${match.setScores[0]?.home}-${match.setScores[0]?.away}/${match.setScores[1]?.home}-${match.setScores[1]?.away}`
+                ? `${match.setScores[0]?.home}-${match.setScores[0]?.away} / ${match.setScores[1]?.home}-${match.setScores[1]?.away}`
                 : '-'}
-            </Text>
-            <Text style={styles.colResult}>{match.status === 'completed' ? match.outcome : '-'}</Text>
-            <Text style={styles.colPoints}>
-              {match.status === 'completed' ? `${match.points.home}-${match.points.away}` : '-'}
             </Text>
           </View>
         ))}
-        {isInitialLoading ? (
-          <View style={styles.tableRow}>
+        {showLoadingText ? (
+          <View style={[styles.tableRow, styles.bodyRow]}>
             <Text style={styles.emptyText}>データを読み込み中です...</Text>
           </View>
         ) : null}
         {!isInitialLoading && matches.length === 0 ? (
-          <View style={styles.tableRow}>
+          <View style={[styles.tableRow, styles.bodyRow]}>
             <Text style={styles.emptyText}>試合がありません。</Text>
           </View>
         ) : null}
+        </View>
       </View>
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  compactCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+  tableCardShadow: {
+    backgroundColor: '#f6f9ff',
+    borderRadius: 28,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
-    gap: 4,
-  },
-  compactHeading: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#1a202c',
-  },
-  compactItem: {
-    fontSize: 12,
-    color: '#2d3748',
+    borderTopColor: '#ffffff',
+    borderLeftColor: '#ffffff',
+    borderRightColor: '#d8e3f5',
+    borderBottomWidth: 0,
+    shadowColor: '#8ba4cc',
+    shadowOffset: { width: 0, height: 14 },
+    shadowOpacity: 0.34,
+    shadowRadius: 20,
+    elevation: 12,
   },
   tableCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-    overflow: 'hidden',
+    borderRadius: 28,
+    overflow: 'visible',
+    backgroundColor: '#f6f9ff',
+    paddingVertical: 6,
   },
   tableRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#edf2f7',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  bodyRow: {
+    marginHorizontal: 8,
+    marginBottom: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderTopColor: '#ffffff',
+    borderLeftColor: '#ffffff',
+    borderRightColor: '#d9e4f7',
+    borderBottomColor: '#d9e4f7',
+    backgroundColor: '#f2f7ff',
+    shadowColor: '#9eb5d9',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 6,
   },
   headerRow: {
-    backgroundColor: '#f8fafc',
+    backgroundColor: 'transparent',
+    gap: 6,
+    marginHorizontal: 8,
+    marginBottom: 6,
   },
   headerText: {
-    fontSize: 11,
-    fontWeight: '500',
-    color: '#4a5568',
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#3f5b8b',
+    textAlign: 'center',
+  },
+  headerCell: {
+    borderWidth: 1,
+    borderTopColor: '#ffffff',
+    borderLeftColor: '#ffffff',
+    borderRightColor: '#d9e4f7',
+    borderBottomColor: '#d9e4f7',
+    backgroundColor: '#f2f7ff',
+    borderRadius: 12,
+    paddingVertical: 4,
+    shadowColor: '#9eb5d9',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 5,
   },
   colTeams: {
     flex: 1,
     paddingRight: 2,
   },
   teamNameText: {
-    fontSize: 12,
-    color: '#2d3748',
+    fontSize: 14,
+    color: '#465777',
   },
   colSets: {
-    width: 86,
-    fontSize: 12,
+    width: 120,
+    fontSize: 14,
     textAlign: 'center',
-    color: '#2d3748',
-  },
-  colResult: {
-    width: 44,
-    fontSize: 12,
-    textAlign: 'center',
-    color: '#2d3748',
-  },
-  colPoints: {
-    width: 48,
-    fontSize: 12,
-    textAlign: 'center',
-    color: '#2d3748',
+    color: '#465777',
   },
   emptyText: {
     flex: 1,
-    fontSize: 12,
+    fontSize: 14,
     textAlign: 'center',
-    color: '#2d3748',
+    color: '#5a6c90',
   },
 });
