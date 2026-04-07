@@ -134,42 +134,44 @@ Create a mobile app icon in retro pixel art style (8-bit Famicom aesthetic).
 - Size: square format, suitable for iOS app icon
 - No white border or padding. Background color must fill the entire image edge to edge.
 
-## TestFlight配布リンク
+## 配布情報
+
+### TestFlight（テスト配布）
 
 https://testflight.apple.com/join/hnHrZZQr
 
 - iPhoneにTestFlightアプリをインストール後、上記URLをタップするだけでインストール可能
 - App Store Connect: https://appstoreconnect.apple.com/apps/6761749295/testflight/ios
 
+### App Store（正式配布）
+
+- App Store Connect: https://appstoreconnect.apple.com/apps/6761749295
+- 審査提出済み（2026-04-07）
+- プライバシーポリシー: https://tetsu0619hira.github.io/softvolley-app/privacy-policy.html
+- 配信地域：日本のみ
+
 ## ビルド・配布（Expo/EAS）
 
 配布用ビルドは EAS を使用します。
 
-### 1) 事前準備
+### 事前準備
 
 ```bash
 npm install -g eas-cli
 eas login
-eas build:configure
 ```
 
-### 2) Android ビルド（AAB/APK）
+### iOSビルド → 提出
 
 ```bash
-eas build -p android --profile production
+npx eas-cli build --platform ios --profile production
+npx eas-cli submit --platform ios --latest
 ```
 
-### 3) iOS ビルド（必要な場合）
+### 環境変数の更新
 
 ```bash
-eas build -p ios --profile production
-```
-
-### 4) ストア提出（任意）
-
-```bash
-eas submit -p android --latest
-eas submit -p ios --latest
+npx eas-cli env:push --environment production --path .env
 ```
 
 ## 現在の主要ファイル構成
