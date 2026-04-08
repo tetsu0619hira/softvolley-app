@@ -146,7 +146,6 @@ export default function MatchResultInputScreen() {
   return (
     <ScreenContainer
       title="試合結果入力"
-      subtitle="セットごとのスコア入力"
     >
       <TournamentSelector
         tournaments={tournaments}
@@ -234,11 +233,22 @@ export default function MatchResultInputScreen() {
         <View style={styles.modalBackdrop}>
           <View style={styles.modalCard}>
             <Text style={styles.heading}>試合を選択</Text>
-            <ScrollView style={styles.modalList} contentContainerStyle={styles.modalListContent}>
+            <View style={styles.modalDivider} />
+            <ScrollView
+              style={styles.modalList}
+              contentContainerStyle={styles.modalListContent}
+              showsVerticalScrollIndicator
+              indicatorStyle="black"
+              persistentScrollbar
+            >
               {visibleMatches.map((match) => (
                 <AnimatedPressable
                   key={match.id}
-                  style={[styles.selectorTrigger, styles.modalSelectorItem, match.id === matchId && styles.matchButtonSelected]}
+                  style={[
+                    styles.selectorTrigger,
+                    styles.modalSelectorItem,
+                    match.id === matchId && styles.modalItemSelected,
+                  ]}
                   onPress={() => {
                     setMatchId(match.id);
                     setShowMatchPicker(false);
@@ -249,7 +259,7 @@ export default function MatchResultInputScreen() {
                       <MatchupLabel
                         home={teamNameMap[match.homeTeamId] ?? '未設定'}
                         away={teamNameMap[match.awayTeamId] ?? '未設定'}
-                        textStyle={styles.item}
+                        textStyle={styles.modalMatchText}
                       />
                     </View>
                   </View>
@@ -300,9 +310,9 @@ const styles = StyleSheet.create({
     gap: 12,
     shadowColor: '#8ba4cc',
     shadowOffset: { width: 0, height: 14 },
-    shadowOpacity: 0.34,
+    shadowOpacity: 0.26,
     shadowRadius: 20,
-    elevation: 12,
+    elevation: 10,
   },
   heading: {
     fontSize: 16,
@@ -345,28 +355,13 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     textAlign: 'center',
     paddingVertical: 11,
-    backgroundColor: '#f2f7ff',
+    backgroundColor: '#f6f9ff',
     color: '#24324b',
     shadowColor: '#9eb5d9',
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.28,
-    shadowRadius: 14,
-    elevation: 9,
-  },
-  matchButton: {
-    borderWidth: 1,
-    borderColor: '#bfd2f3',
-    borderRadius: 24,
-    minHeight: 50,
-    paddingHorizontal: 16,
-    paddingVertical: 0,
-    justifyContent: 'center',
-    backgroundColor: '#edf4ff',
-    shadowColor: '#8ba8d1',
-    shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.2,
     shadowRadius: 14,
-    elevation: 6,
+    elevation: 8,
   },
   selectorTrigger: {
     borderWidth: 1,
@@ -378,15 +373,24 @@ const styles = StyleSheet.create({
     minHeight: 50,
     paddingHorizontal: 16,
     justifyContent: 'center',
-    backgroundColor: '#f2f7ff',
+    backgroundColor: '#f6f9ff',
     shadowColor: '#9eb5d9',
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.28,
+    shadowOpacity: 0.2,
     shadowRadius: 14,
-    elevation: 9,
+    elevation: 8,
   },
   modalSelectorItem: {
-    minHeight: 50,
+    minHeight: 48,
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    backgroundColor: '#f6f9ff',
+    borderTopColor: '#ffffff',
+    borderLeftColor: '#ffffff',
+    borderRightColor: '#c7d7ef',
+    borderBottomColor: '#c7d7ef',
+    shadowOpacity: 0,
+    elevation: 0,
   },
   selectorContent: {
     flexDirection: 'row',
@@ -396,21 +400,14 @@ const styles = StyleSheet.create({
   selectorTextWrap: {
     flex: 1,
   },
-  matchButtonSelected: {
-    borderTopColor: '#f7fbff',
-    borderLeftColor: '#f7fbff',
-    borderRightColor: '#c6d9f7',
-    borderBottomColor: '#c6d9f7',
-    backgroundColor: '#e2eeff',
-  },
   modalBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(223, 232, 246, 0.96)',
+    backgroundColor: 'rgba(170, 195, 220, 0.92)',
     justifyContent: 'center',
     padding: 16,
   },
   modalCard: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#dde8f6',
     borderRadius: 28,
     padding: 18,
     maxHeight: '70%',
@@ -418,20 +415,41 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderTopColor: '#ffffff',
     borderLeftColor: '#ffffff',
-    borderRightColor: '#d8e3f5',
-    borderBottomColor: '#d8e3f5',
+    borderRightColor: '#c8d6ed',
+    borderBottomColor: '#c8d6ed',
     shadowColor: '#8ba4cc',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 10,
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.32,
+    shadowRadius: 22,
+    elevation: 13,
+  },
+  modalDivider: {
+    height: 1,
+    marginTop: -2,
+    backgroundColor: '#e3ebf8',
   },
   modalList: {
     maxHeight: 360,
     backgroundColor: 'transparent',
   },
   modalListContent: {
-    gap: 8,
+    gap: 6,
+    paddingVertical: 2,
+  },
+  modalItemSelected: {
+    borderTopColor: '#f4f9ff',
+    borderLeftColor: '#f4f9ff',
+    borderRightColor: '#8fb2e6',
+    borderBottomColor: '#8fb2e6',
+    backgroundColor: '#dfeeff',
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  modalMatchText: {
+    fontSize: 14,
+    color: '#2f486f',
+    fontWeight: '600',
   },
   button: {
     marginTop: 8,
@@ -440,10 +458,10 @@ const styles = StyleSheet.create({
     paddingVertical: 13,
     alignItems: 'center',
     shadowColor: '#2f7fe6',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.42,
-    shadowRadius: 18,
-    elevation: 13,
+    shadowOffset: { width: 0, height: 9 },
+    shadowOpacity: 0.24,
+    shadowRadius: 14,
+    elevation: 8,
   },
   buttonText: {
     color: '#fff',

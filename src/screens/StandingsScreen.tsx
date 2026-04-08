@@ -80,7 +80,7 @@ export default function StandingsScreen() {
   return (
     <ScreenContainer
       title="順位表"
-      subtitle={`勝ち点合計でソート（大会: ${showLoadingText ? '読み込み中...' : currentTournament?.name ?? '未作成'}）`}
+
     >
       <TournamentSelector
         tournaments={tournaments}
@@ -116,13 +116,21 @@ export default function StandingsScreen() {
       <View style={styles.tableCardShadow}>
         <View style={styles.tableCard}>
         <View style={[styles.tableRow, styles.headerRow]}>
-          <Text style={[styles.colRank, styles.headerCell, styles.headerText]}>順位</Text>
-          <Text style={[styles.colTeam, styles.headerCell, styles.headerTeamCell, styles.headerText]}>
+          <Text style={[styles.colRank, styles.headerCell, styles.headerCellPrimary, styles.headerText, styles.headerTextPrimary]}>
+            順位
+          </Text>
+          <Text style={[styles.colTeam, styles.headerCell, styles.headerTeamCell, styles.headerCellPrimary, styles.headerText, styles.headerTextPrimary]}>
             チーム名
           </Text>
-          <Text style={[styles.colNum, styles.headerCell, styles.headerText]}>勝ち点</Text>
-          <Text style={[styles.colNum, styles.headerCell, styles.headerText]}>総得点</Text>
-          <Text style={[styles.colNum, styles.headerCell, styles.headerText]}>総失点</Text>
+          <Text style={[styles.colNum, styles.headerCell, styles.headerCellSecondary, styles.headerText, styles.headerTextSecondary]}>
+            勝ち点
+          </Text>
+          <Text style={[styles.colNum, styles.headerCell, styles.headerCellSecondary, styles.headerText, styles.headerTextSecondary]}>
+            総得点
+          </Text>
+          <Text style={[styles.colNum, styles.headerCell, styles.headerCellSecondary, styles.headerText, styles.headerTextSecondary]}>
+            総失点
+          </Text>
         </View>
         {(() => {
           return rankedStandings.map((row, index) => {
@@ -175,14 +183,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderTopColor: '#ffffff',
     borderLeftColor: '#ffffff',
-    borderRightColor: '#d8e3f5',
-    borderBottomColor: '#d8e3f5',
+    borderRightColor: '#cedcf1',
+    borderBottomColor: '#cedcf1',
     gap: 4,
     shadowColor: '#8ba4cc',
     shadowOffset: { width: 0, height: 14 },
-    shadowOpacity: 0.34,
+    shadowOpacity: 0.3,
     shadowRadius: 20,
-    elevation: 12,
+    elevation: 10,
   },
   compactHeading: {
     fontSize: 13,
@@ -201,7 +209,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 9,
     paddingVertical: 4,
     borderRadius: 12,
-    backgroundColor: '#f2f7ff',
+    backgroundColor: '#f6f9ff',
     borderWidth: 1,
     borderTopColor: '#ffffff',
     borderLeftColor: '#ffffff',
@@ -223,51 +231,53 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderTopColor: '#ffffff',
     borderLeftColor: '#ffffff',
-    borderRightColor: '#d8e3f5',
+    borderRightColor: '#cedcf1',
     borderBottomWidth: 0,
     shadowColor: '#8ba4cc',
     shadowOffset: { width: 0, height: 14 },
-    shadowOpacity: 0.34,
+    shadowOpacity: 0.3,
     shadowRadius: 20,
-    elevation: 12,
+    elevation: 10,
   },
   tableCard: {
     borderRadius: 28,
     overflow: 'visible',
     backgroundColor: '#f6f9ff',
-    paddingVertical: 6,
+    paddingTop: 4,
+    paddingBottom: 6,
   },
   tableRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 14,
-    paddingVertical: 11,
+    paddingVertical: 9,
   },
   bodyRow: {
-    marginHorizontal: 8,
-    marginBottom: 6,
+    marginHorizontal: 12,
+    marginBottom: 4,
     borderRadius: 16,
     borderWidth: 1,
     borderTopColor: '#ffffff',
     borderLeftColor: '#ffffff',
-    borderRightColor: '#d9e4f7',
-    borderBottomColor: '#d9e4f7',
-    backgroundColor: '#f2f7ff',
+    borderRightColor: '#cfdcf0',
+    borderBottomColor: '#cfdcf0',
+    backgroundColor: '#f6f9ff',
     shadowColor: '#9eb5d9',
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.18,
     shadowRadius: 10,
-    elevation: 6,
+    elevation: 5,
   },
   headerRow: {
     backgroundColor: 'transparent',
     gap: 6,
-    marginHorizontal: 8,
-    marginBottom: 6,
+    marginHorizontal: 12,
+    marginBottom: 4,
   },
   headerText: {
     fontSize: 12,
     fontWeight: '700',
+    lineHeight: 16,
     color: '#3f5b8b',
     textAlign: 'center',
   },
@@ -275,20 +285,38 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderTopColor: '#ffffff',
     borderLeftColor: '#ffffff',
-    borderRightColor: '#d9e4f7',
-    borderBottomColor: '#d9e4f7',
-    backgroundColor: '#f2f7ff',
+    borderRightColor: '#cfdcf0',
+    borderBottomColor: '#cfdcf0',
+    backgroundColor: '#f6f9ff',
     borderRadius: 12,
-    paddingVertical: 4,
+    height: 26,
+    paddingTop: 4,
+    paddingBottom: 4,
     shadowColor: '#9eb5d9',
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.17,
     shadowRadius: 10,
-    elevation: 5,
+    elevation: 4,
+  },
+  headerCellPrimary: {
+    backgroundColor: '#e2eeff',
+    borderRightColor: '#c6d9f7',
+    borderBottomColor: '#c6d9f7',
+  },
+  headerCellSecondary: {
+    backgroundColor: '#fff2e6',
+    borderRightColor: '#f0d4b8',
+    borderBottomColor: '#f0d4b8',
   },
   headerTeamCell: {
     textAlign: 'left',
-    paddingLeft: 10,
+    paddingLeft: 0,
+  },
+  headerTextPrimary: {
+    color: '#2b5fa5',
+  },
+  headerTextSecondary: {
+    color: '#9a5b2a',
   },
   colRank: {
     width: 36,
@@ -296,9 +324,9 @@ const styles = StyleSheet.create({
     color: '#465777',
   },
   rankBadge: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,

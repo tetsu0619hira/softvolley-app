@@ -7,6 +7,7 @@ import {
   onSnapshot,
   orderBy,
   query,
+  runTransaction,
   updateDoc,
   where,
 } from 'firebase/firestore';
@@ -18,6 +19,7 @@ import { COLLECTIONS } from './collections';
 import { db } from './config';
 
 const nowIso = () => new Date().toISOString();
+const fallbackOrder = Number.MAX_SAFE_INTEGER;
 
 type Unsubscribe = () => void;
 
@@ -34,6 +36,7 @@ export function subscribeTournaments(callback: (items: Tournament[]) => void): U
       id: item.id,
       ...item.data(),
       pointRules: normalizePointRules((item.data() as Tournament).pointRules),
+      matchesOrderVersion: (item.data() as Partial<Tournament>).matchesOrderVersion ?? 0,
     })) as Tournament[];
     callback(items);
   });
@@ -84,7 +87,12 @@ export function subscribeMatches(
         id: item.id,
         ...item.data(),
       })) as Match[];
-    items.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    items.sort((a, b) => {
+      const orderA = typeof a.displayOrder === 'number' ? a.displayOrder : fallbackOrder;
+      const orderB = typeof b.displayOrder === 'number' ? b.displayOrder : fallbackOrder;
+      if (orderA !== orderB) return orderA - orderB;
+      return a.createdAt.localeCompare(b.createdAt);
+    });
     callback(items);
   });
 }
@@ -97,6 +105,7 @@ export async function createTournament(name: string, date: string) {
     name,
     date,
     pointRules: DEFAULT_POINT_RULES,
+    matchesOrderVersion: 0,
     createdAt: timestamp,
     updatedAt: timestamp,
   });
@@ -189,11 +198,21 @@ export async function createMatch(tournamentId: string, homeTeamId: string, away
     throw new Error('同じ対戦カードが既に登録されています。');
   }
 
+  const nextDisplayOrder =
+    existing.docs.reduce((maxOrder, item) => {
+      const value = (item.data() as Partial<Match>).displayOrder;
+      if (typeof value === 'number' && Number.isFinite(value)) {
+        return Math.max(maxOrder, value);
+      }
+      return maxOrder;
+    }, -1) + 1;
+
   const timestamp = nowIso();
   await addDoc(collection(db, COLLECTIONS.matches), {
     tournamentId,
     homeTeamId,
     awayTeamId,
+    displayOrder: nextDisplayOrder,
     setScores: [],
     totalScore: { home: 0, away: 0 },
     outcome: null,
@@ -207,6 +226,49 @@ export async function createMatch(tournamentId: string, homeTeamId: string, away
 export async function deleteMatch(matchId: string) {
   if (!db) throw new Error('Firebase未設定です。');
   await deleteDoc(doc(db, COLLECTIONS.matches, matchId));
+}
+
+export async function reorderMatches(
+  tournamentId: string,
+  matchIdsInOrder: string[],
+  expectedVersion: number,
+) {
+  if (!db) throw new Error('Firebase未設定です。');
+  if (matchIdsInOrder.length === 0) return expectedVersion;
+
+  const dbRef = db;
+  const updatedAt = nowIso();
+  const nextVersion = await runTransaction(dbRef, async (transaction) => {
+    const tournamentRef = doc(dbRef, COLLECTIONS.tournaments, tournamentId);
+    const tournamentSnap = await transaction.get(tournamentRef);
+    if (!tournamentSnap.exists()) {
+      throw new Error('大会データが見つかりません。');
+    }
+
+    const data = tournamentSnap.data() as Partial<Tournament>;
+    const currentVersion = data.matchesOrderVersion ?? 0;
+    if (currentVersion !== expectedVersion) {
+      throw new Error(
+        '並び順の更新が競合しました。最新の表示に更新したうえで、もう一度並び替えてください。',
+      );
+    }
+
+    matchIdsInOrder.forEach((matchId, index) => {
+      transaction.update(doc(dbRef, COLLECTIONS.matches, matchId), {
+        displayOrder: index,
+        updatedAt,
+      });
+    });
+
+    const updatedVersion = currentVersion + 1;
+    transaction.update(tournamentRef, {
+      matchesOrderVersion: updatedVersion,
+      updatedAt,
+    });
+    return updatedVersion;
+  });
+
+  return nextVersion;
 }
 
 export async function submitMatchResult(

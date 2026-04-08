@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState } from "react";
 import {
   Alert,
   Keyboard,
@@ -10,23 +10,26 @@ import {
   TextInput,
   UIManager,
   View,
-} from 'react-native';
+} from "react-native";
 import DateTimePicker, {
   DateTimePickerEvent,
-} from '@react-native-community/datetimepicker';
+} from "@react-native-community/datetimepicker";
 import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
   signOut,
   User,
-} from 'firebase/auth';
-import { useEffect } from 'react';
-import ScreenContainer from '../components/ScreenContainer';
-import AnimatedPressable from '../components/AnimatedPressable';
-import MatchupLabel from '../components/MatchupLabel';
-import TournamentSelector from '../components/TournamentSelector';
-import { DEFAULT_POINT_RULES, normalizePointRules } from '../constants/defaultRules';
-import { auth, firebaseConfigReady } from '../firebase/config';
+} from "firebase/auth";
+import { useEffect } from "react";
+import ScreenContainer from "../components/ScreenContainer";
+import AnimatedPressable from "../components/AnimatedPressable";
+import MatchupLabel from "../components/MatchupLabel";
+import TournamentSelector from "../components/TournamentSelector";
+import {
+  DEFAULT_POINT_RULES,
+  normalizePointRules,
+} from "../constants/defaultRules";
+import { auth, firebaseConfigReady } from "../firebase/config";
 import {
   createMatch,
   createTeam,
@@ -35,9 +38,9 @@ import {
   deleteTeam,
   deleteTournament,
   updateTournamentPointRules,
-} from '../firebase/repositories';
-import { useTournamentData } from '../hooks/useTournamentData';
-import { PointRules } from '../types/models';
+} from "../firebase/repositories";
+import { useTournamentData } from "../hooks/useTournamentData";
+import { PointRules } from "../types/models";
 
 export default function AdminScreen() {
   const firebaseReady = useMemo(() => firebaseConfigReady, []);
@@ -51,15 +54,17 @@ export default function AdminScreen() {
     teamNameMap,
   } = useTournamentData();
   const [user, setUser] = useState<User | null>(null);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [tournamentName, setTournamentName] = useState('');
-  const [tournamentDate, setTournamentDate] = useState('');
-  const [tournamentDateValue, setTournamentDateValue] = useState<Date>(new Date());
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [tournamentName, setTournamentName] = useState("");
+  const [tournamentDate, setTournamentDate] = useState("");
+  const [tournamentDateValue, setTournamentDateValue] = useState<Date>(
+    new Date(),
+  );
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [teamName, setTeamName] = useState('');
-  const [homeTeamId, setHomeTeamId] = useState('');
-  const [awayTeamId, setAwayTeamId] = useState('');
+  const [teamName, setTeamName] = useState("");
+  const [homeTeamId, setHomeTeamId] = useState("");
+  const [awayTeamId, setAwayTeamId] = useState("");
   const [saving, setSaving] = useState(false);
   const [sectionOpen, setSectionOpen] = useState({
     connection: false,
@@ -71,13 +76,18 @@ export default function AdminScreen() {
   });
 
   useEffect(() => {
-    if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+    if (
+      Platform.OS === "android" &&
+      UIManager.setLayoutAnimationEnabledExperimental
+    ) {
       UIManager.setLayoutAnimationEnabledExperimental(true);
     }
   }, []);
 
   const [rules, setRules] = useState<PointRules>(
-    normalizePointRules(currentTournament?.pointRules ?? { ...DEFAULT_POINT_RULES }),
+    normalizePointRules(
+      currentTournament?.pointRules ?? { ...DEFAULT_POINT_RULES },
+    ),
   );
 
   useEffect(() => {
@@ -95,20 +105,20 @@ export default function AdminScreen() {
   const handleAdminLogin = async () => {
     Keyboard.dismiss();
     if (!auth) {
-      Alert.alert('未設定', 'Firebase設定が不足しています。');
+      Alert.alert("未設定", "Firebase設定が不足しています。");
       return;
     }
     if (!email.trim() || !password.trim()) {
-      Alert.alert('入力不足', 'メールアドレスとパスワードを入力してください。');
+      Alert.alert("入力不足", "メールアドレスとパスワードを入力してください。");
       return;
     }
 
     try {
       setSaving(true);
       await signInWithEmailAndPassword(auth, email.trim(), password);
-      Alert.alert('ログイン成功', '管理者モードを有効化しました。');
+      Alert.alert("ログイン成功", "管理者モードを有効化しました。");
     } catch (error) {
-      Alert.alert('ログイン失敗', '認証情報を確認してください。');
+      Alert.alert("ログイン失敗", "認証情報を確認してください。");
     } finally {
       setSaving(false);
     }
@@ -117,7 +127,7 @@ export default function AdminScreen() {
   const handleCreateTournament = async () => {
     Keyboard.dismiss();
     if (!tournamentName.trim() || !tournamentDate.trim()) {
-      Alert.alert('入力不足', '大会名と日付を入力してください。');
+      Alert.alert("入力不足", "大会名と日付を入力してください。");
       return;
     }
 
@@ -128,24 +138,27 @@ export default function AdminScreen() {
         tournamentDate.trim(),
       );
       setSelectedTournamentId(createdTournamentId);
-      setTournamentName('');
-      setTournamentDate('');
-      Alert.alert('保存完了', '大会を登録しました。');
+      setTournamentName("");
+      setTournamentDate("");
+      Alert.alert("保存完了", "大会を登録しました。");
     } catch (error) {
       Alert.alert(
-        '保存失敗',
-        error instanceof Error ? error.message : '大会の登録に失敗しました。',
+        "保存失敗",
+        error instanceof Error ? error.message : "大会の登録に失敗しました。",
       );
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
-    if (Platform.OS === 'android') {
+  const handleDateChange = (
+    event: DateTimePickerEvent,
+    selectedDate?: Date,
+  ) => {
+    if (Platform.OS === "android") {
       setShowDatePicker(false);
     }
-    if (event.type === 'dismissed' || !selectedDate) {
+    if (event.type === "dismissed" || !selectedDate) {
       return;
     }
     setTournamentDateValue(selectedDate);
@@ -155,7 +168,7 @@ export default function AdminScreen() {
   const handleUpdateRules = async () => {
     Keyboard.dismiss();
     if (!currentTournament) {
-      Alert.alert('対象なし', '先に大会を作成してください。');
+      Alert.alert("対象なし", "先に大会を作成してください。");
       return;
     }
 
@@ -165,11 +178,13 @@ export default function AdminScreen() {
         ...rules,
         straightLoss: DEFAULT_POINT_RULES.straightLoss,
       });
-      Alert.alert('更新完了', '勝ち点ルールを更新しました。');
+      Alert.alert("更新完了", "勝ち点ルールを更新しました。");
     } catch (error) {
       Alert.alert(
-        '更新失敗',
-        error instanceof Error ? error.message : '勝ち点ルールの更新に失敗しました。',
+        "更新失敗",
+        error instanceof Error
+          ? error.message
+          : "勝ち点ルールの更新に失敗しました。",
       );
     } finally {
       setSaving(false);
@@ -179,23 +194,23 @@ export default function AdminScreen() {
   const handleCreateTeam = async () => {
     Keyboard.dismiss();
     if (!currentTournament) {
-      Alert.alert('対象なし', '先に大会を作成してください。');
+      Alert.alert("対象なし", "先に大会を作成してください。");
       return;
     }
     if (!teamName.trim()) {
-      Alert.alert('入力不足', 'チーム名を入力してください。');
+      Alert.alert("入力不足", "チーム名を入力してください。");
       return;
     }
 
     try {
       setSaving(true);
       await createTeam(currentTournament.id, teamName.trim());
-      setTeamName('');
-      Alert.alert('保存完了', 'チームを登録しました。');
+      setTeamName("");
+      Alert.alert("保存完了", "チームを登録しました。");
     } catch (error) {
       Alert.alert(
-        '保存失敗',
-        error instanceof Error ? error.message : 'チーム登録に失敗しました。',
+        "保存失敗",
+        error instanceof Error ? error.message : "チーム登録に失敗しました。",
       );
     } finally {
       setSaving(false);
@@ -205,22 +220,24 @@ export default function AdminScreen() {
   const handleCreateMatch = async () => {
     Keyboard.dismiss();
     if (!currentTournament) {
-      Alert.alert('対象なし', '先に大会を作成してください。');
+      Alert.alert("対象なし", "先に大会を作成してください。");
       return;
     }
     if (!homeTeamId || !awayTeamId || homeTeamId === awayTeamId) {
-      Alert.alert('入力不足', '異なる2チームを選択してください。');
+      Alert.alert("入力不足", "異なる2チームを選択してください。");
       return;
     }
 
     try {
       setSaving(true);
       await createMatch(currentTournament.id, homeTeamId, awayTeamId);
-      Alert.alert('保存完了', '対戦カードを作成しました。');
+      Alert.alert("保存完了", "対戦カードを作成しました。");
     } catch (error) {
       Alert.alert(
-        '保存失敗',
-        error instanceof Error ? error.message : '対戦カード作成に失敗しました。',
+        "保存失敗",
+        error instanceof Error
+          ? error.message
+          : "対戦カード作成に失敗しました。",
       );
     } finally {
       setSaving(false);
@@ -231,24 +248,26 @@ export default function AdminScreen() {
     if (!currentTournament) return;
     Keyboard.dismiss();
     Alert.alert(
-      'チーム削除確認',
+      "チーム削除確認",
       `${teamName} を削除します。関連する対戦カードも削除されます。`,
       [
-        { text: 'キャンセル', style: 'cancel' },
+        { text: "キャンセル", style: "cancel" },
         {
-          text: '削除',
-          style: 'destructive',
+          text: "削除",
+          style: "destructive",
           onPress: async () => {
             try {
               setSaving(true);
               await deleteTeam(teamId, currentTournament.id);
-              if (homeTeamId === teamId) setHomeTeamId('');
-              if (awayTeamId === teamId) setAwayTeamId('');
-              Alert.alert('削除完了', 'チームを削除しました。');
+              if (homeTeamId === teamId) setHomeTeamId("");
+              if (awayTeamId === teamId) setAwayTeamId("");
+              Alert.alert("削除完了", "チームを削除しました。");
             } catch (error) {
               Alert.alert(
-                '削除失敗',
-                error instanceof Error ? error.message : 'チーム削除に失敗しました。',
+                "削除失敗",
+                error instanceof Error
+                  ? error.message
+                  : "チーム削除に失敗しました。",
               );
             } finally {
               setSaving(false);
@@ -261,20 +280,22 @@ export default function AdminScreen() {
 
   const handleDeleteMatch = async (matchId: string) => {
     Keyboard.dismiss();
-    Alert.alert('対戦カード削除確認', 'この対戦カードを削除します。', [
-      { text: 'キャンセル', style: 'cancel' },
+    Alert.alert("対戦カード削除確認", "この対戦カードを削除します。", [
+      { text: "キャンセル", style: "cancel" },
       {
-        text: '削除',
-        style: 'destructive',
+        text: "削除",
+        style: "destructive",
         onPress: async () => {
           try {
             setSaving(true);
             await deleteMatch(matchId);
-            Alert.alert('削除完了', '対戦カードを削除しました。');
+            Alert.alert("削除完了", "対戦カードを削除しました。");
           } catch (error) {
             Alert.alert(
-              '削除失敗',
-              error instanceof Error ? error.message : '対戦カード削除に失敗しました。',
+              "削除失敗",
+              error instanceof Error
+                ? error.message
+                : "対戦カード削除に失敗しました。",
             );
           } finally {
             setSaving(false);
@@ -286,19 +307,19 @@ export default function AdminScreen() {
 
   const handleDeleteTournament = async () => {
     if (!currentTournament) {
-      Alert.alert('対象なし', '削除対象の大会がありません。');
+      Alert.alert("対象なし", "削除対象の大会がありません。");
       return;
     }
 
     Keyboard.dismiss();
     Alert.alert(
-      '大会削除確認',
+      "大会削除確認",
       `「${currentTournament.name}」を削除します。\nこの大会のチーム・対戦カード・結果もすべて削除されます。`,
       [
-        { text: 'キャンセル', style: 'cancel' },
+        { text: "キャンセル", style: "cancel" },
         {
-          text: '削除',
-          style: 'destructive',
+          text: "削除",
+          style: "destructive",
           onPress: async () => {
             try {
               setSaving(true);
@@ -307,13 +328,15 @@ export default function AdminScreen() {
               if (selectedTournamentId === deletingTournamentId) {
                 setSelectedTournamentId(null);
               }
-              setHomeTeamId('');
-              setAwayTeamId('');
-              Alert.alert('削除完了', '大会と関連データを削除しました。');
+              setHomeTeamId("");
+              setAwayTeamId("");
+              Alert.alert("削除完了", "大会と関連データを削除しました。");
             } catch (error) {
               Alert.alert(
-                '削除失敗',
-                error instanceof Error ? error.message : '大会削除に失敗しました。',
+                "削除失敗",
+                error instanceof Error
+                  ? error.message
+                  : "大会削除に失敗しました。",
               );
             } finally {
               setSaving(false);
@@ -335,7 +358,7 @@ export default function AdminScreen() {
   return (
     <ScreenContainer
       title="管理者"
-      subtitle="管理者ログイン後に大会・チーム・勝ち点ルールを編集"
+
     >
       {!user ? (
         <View style={styles.card}>
@@ -355,7 +378,11 @@ export default function AdminScreen() {
             secureTextEntry
             placeholder="パスワード"
           />
-          <AnimatedPressable style={styles.button} onPress={handleAdminLogin} disabled={saving}>
+          <AnimatedPressable
+            style={styles.button}
+            onPress={handleAdminLogin}
+            disabled={saving}
+          >
             <Text style={styles.buttonText}>ログイン</Text>
           </AnimatedPressable>
         </View>
@@ -370,18 +397,24 @@ export default function AdminScreen() {
           <View style={styles.card}>
             <AnimatedPressable
               style={styles.toggleHeader}
-              onPress={() => toggleSection('connection')}
+              onPress={() => toggleSection("connection")}
             >
               <Text style={styles.heading}>接続状態</Text>
-              <Text style={styles.toggleIcon}>{sectionOpen.connection ? '▲' : '▼'}</Text>
+              <Text style={styles.toggleIcon}>
+                {sectionOpen.connection ? "▲" : "▼"}
+              </Text>
             </AnimatedPressable>
             {sectionOpen.connection ? (
               <>
                 <Text style={styles.status}>
-                  Firebase接続: {firebaseReady ? '利用可能（設定済み）' : '利用不可（設定未完了）'}
+                  Firebase接続:{" "}
+                  {firebaseReady
+                    ? "利用可能（設定済み）"
+                    : "利用不可（設定未完了）"}
                 </Text>
                 <Text style={styles.item}>
-                  選択中の大会: {currentTournament ? currentTournament.name : '未作成'}
+                  選択中の大会:{" "}
+                  {currentTournament ? currentTournament.name : "未作成"}
                 </Text>
                 <Text style={styles.item}>
                   ※ 利用不可の場合は `.env` の Firebase 設定を確認してください
@@ -391,9 +424,14 @@ export default function AdminScreen() {
           </View>
 
           <View style={styles.card}>
-            <AnimatedPressable style={styles.toggleHeader} onPress={() => toggleSection('session')}>
+            <AnimatedPressable
+              style={styles.toggleHeader}
+              onPress={() => toggleSection("session")}
+            >
               <Text style={styles.heading}>ログイン情報</Text>
-              <Text style={styles.toggleIcon}>{sectionOpen.session ? '▲' : '▼'}</Text>
+              <Text style={styles.toggleIcon}>
+                {sectionOpen.session ? "▲" : "▼"}
+              </Text>
             </AnimatedPressable>
             {sectionOpen.session ? (
               <>
@@ -414,10 +452,12 @@ export default function AdminScreen() {
           <View style={styles.card}>
             <AnimatedPressable
               style={styles.toggleHeader}
-              onPress={() => toggleSection('tournament')}
+              onPress={() => toggleSection("tournament")}
             >
               <Text style={styles.heading}>大会登録</Text>
-              <Text style={styles.toggleIcon}>{sectionOpen.tournament ? '▲' : '▼'}</Text>
+              <Text style={styles.toggleIcon}>
+                {sectionOpen.tournament ? "▲" : "▼"}
+              </Text>
             </AnimatedPressable>
             {sectionOpen.tournament ? (
               <>
@@ -434,15 +474,19 @@ export default function AdminScreen() {
                     setShowDatePicker(true);
                   }}
                 >
-                  <Text style={tournamentDate ? styles.inputText : styles.placeholderText}>
-                    {tournamentDate || '日付をカレンダーから選択'}
+                  <Text
+                    style={
+                      tournamentDate ? styles.inputText : styles.placeholderText
+                    }
+                  >
+                    {tournamentDate || "日付をカレンダーから選択"}
                   </Text>
                 </Pressable>
                 {showDatePicker ? (
                   <DateTimePicker
                     value={tournamentDateValue}
                     mode="date"
-                    display={Platform.OS === 'ios' ? 'inline' : 'default'}
+                    display={Platform.OS === "ios" ? "inline" : "default"}
                     locale="ja-JP"
                     onChange={handleDateChange}
                   />
@@ -466,33 +510,50 @@ export default function AdminScreen() {
           </View>
 
           <View style={styles.card}>
-            <AnimatedPressable style={styles.toggleHeader} onPress={() => toggleSection('rules')}>
+            <AnimatedPressable
+              style={styles.toggleHeader}
+              onPress={() => toggleSection("rules")}
+            >
               <Text style={styles.heading}>勝ち点ルール設定</Text>
-              <Text style={styles.toggleIcon}>{sectionOpen.rules ? '▲' : '▼'}</Text>
+              <Text style={styles.toggleIcon}>
+                {sectionOpen.rules ? "▲" : "▼"}
+              </Text>
             </AnimatedPressable>
             {sectionOpen.rules ? (
               <>
                 <RuleInput
                   label="2-0勝ち"
                   value={rules.straightWin}
-                  onChange={(value) => setRules((prev) => ({ ...prev, straightWin: value }))}
+                  onChange={(value) =>
+                    setRules((prev) => ({ ...prev, straightWin: value }))
+                  }
                 />
                 <RuleInput
                   label="1-1（得点多い）"
                   value={rules.drawHigherScore}
-                  onChange={(value) => setRules((prev) => ({ ...prev, drawHigherScore: value }))}
+                  onChange={(value) =>
+                    setRules((prev) => ({ ...prev, drawHigherScore: value }))
+                  }
                 />
                 <RuleInput
                   label="1-1（得点少ない）"
                   value={rules.drawLowerScore}
-                  onChange={(value) => setRules((prev) => ({ ...prev, drawLowerScore: value }))}
+                  onChange={(value) =>
+                    setRules((prev) => ({ ...prev, drawLowerScore: value }))
+                  }
                 />
                 <RuleInput
                   label="1-1（得点同じ）"
                   value={rules.drawEqualScore}
-                  onChange={(value) => setRules((prev) => ({ ...prev, drawEqualScore: value }))}
+                  onChange={(value) =>
+                    setRules((prev) => ({ ...prev, drawEqualScore: value }))
+                  }
                 />
-                <AnimatedPressable style={styles.button} onPress={handleUpdateRules} disabled={saving}>
+                <AnimatedPressable
+                  style={styles.button}
+                  onPress={handleUpdateRules}
+                  disabled={saving}
+                >
                   <Text style={styles.buttonText}>ルールを保存</Text>
                 </AnimatedPressable>
               </>
@@ -500,9 +561,14 @@ export default function AdminScreen() {
           </View>
 
           <View style={styles.card}>
-            <AnimatedPressable style={styles.toggleHeader} onPress={() => toggleSection('teams')}>
+            <AnimatedPressable
+              style={styles.toggleHeader}
+              onPress={() => toggleSection("teams")}
+            >
               <Text style={styles.heading}>チーム登録</Text>
-              <Text style={styles.toggleIcon}>{sectionOpen.teams ? '▲' : '▼'}</Text>
+              <Text style={styles.toggleIcon}>
+                {sectionOpen.teams ? "▲" : "▼"}
+              </Text>
             </AnimatedPressable>
             {sectionOpen.teams ? (
               <>
@@ -512,7 +578,11 @@ export default function AdminScreen() {
                   style={styles.input}
                   placeholder="チーム名"
                 />
-                <AnimatedPressable style={styles.button} onPress={handleCreateTeam} disabled={saving}>
+                <AnimatedPressable
+                  style={styles.button}
+                  onPress={handleCreateTeam}
+                  disabled={saving}
+                >
                   <Text style={styles.buttonText}>チームを保存</Text>
                 </AnimatedPressable>
                 {teams.map((team) => (
@@ -532,9 +602,14 @@ export default function AdminScreen() {
           </View>
 
           <View style={styles.card}>
-            <AnimatedPressable style={styles.toggleHeader} onPress={() => toggleSection('matches')}>
+            <AnimatedPressable
+              style={styles.toggleHeader}
+              onPress={() => toggleSection("matches")}
+            >
               <Text style={styles.heading}>対戦カード作成</Text>
-              <Text style={styles.toggleIcon}>{sectionOpen.matches ? '▲' : '▼'}</Text>
+              <Text style={styles.toggleIcon}>
+                {sectionOpen.matches ? "▲" : "▼"}
+              </Text>
             </AnimatedPressable>
             {sectionOpen.matches ? (
               <>
@@ -566,15 +641,19 @@ export default function AdminScreen() {
                     />
                   ))}
                 </View>
-                <AnimatedPressable style={styles.button} onPress={handleCreateMatch} disabled={saving}>
+                <AnimatedPressable
+                  style={styles.button}
+                  onPress={handleCreateMatch}
+                  disabled={saving}
+                >
                   <Text style={styles.buttonText}>対戦カードを保存</Text>
                 </AnimatedPressable>
                 {matches.map((match) => (
                   <View key={match.id} style={styles.rowBetween}>
                     <View style={styles.rowText}>
                       <MatchupLabel
-                        home={teamNameMap[match.homeTeamId] ?? '未設定'}
-                        away={teamNameMap[match.awayTeamId] ?? '未設定'}
+                        home={teamNameMap[match.homeTeamId] ?? "未設定"}
+                        away={teamNameMap[match.awayTeamId] ?? "未設定"}
                         textStyle={styles.item}
                       />
                     </View>
@@ -610,7 +689,7 @@ function RuleInput({
       <Text style={styles.ruleLabel}>{label}</Text>
       <TextInput
         value={String(value)}
-        onChangeText={(text) => onChange(Number(text || '0'))}
+        onChangeText={(text) => onChange(Number(text || "0"))}
         keyboardType="numeric"
         style={styles.ruleInput}
       />
@@ -642,158 +721,158 @@ function TeamButton({
 
 function formatDate(date: Date): string {
   const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
   return `${y}-${m}-${d}`;
 }
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#f6f9ff',
+    backgroundColor: "#f6f9ff",
     borderRadius: 28,
     padding: 20,
     borderWidth: 1,
-    borderTopColor: '#ffffff',
-    borderLeftColor: '#ffffff',
-    borderRightColor: '#d8e3f5',
-    borderBottomColor: '#d8e3f5',
+    borderTopColor: "#ffffff",
+    borderLeftColor: "#ffffff",
+    borderRightColor: "#d8e3f5",
+    borderBottomColor: "#d8e3f5",
     gap: 12,
-    shadowColor: '#8ba4cc',
+    shadowColor: "#8ba4cc",
     shadowOffset: { width: 0, height: 14 },
-    shadowOpacity: 0.34,
+    shadowOpacity: 0.26,
     shadowRadius: 20,
-    elevation: 12,
+    elevation: 10,
   },
   heading: {
     fontSize: 16,
-    fontWeight: '700',
-    color: '#24324b',
+    fontWeight: "700",
+    color: "#24324b",
   },
   item: {
     fontSize: 14,
-    color: '#465777',
+    color: "#465777",
   },
   status: {
     fontSize: 13,
-    color: '#4a90e2',
+    color: "#4a90e2",
     marginTop: 4,
   },
   input: {
     borderWidth: 1,
-    borderTopColor: '#ffffff',
-    borderLeftColor: '#ffffff',
-    borderRightColor: '#d9e4f7',
-    borderBottomColor: '#d9e4f7',
+    borderTopColor: "#ffffff",
+    borderLeftColor: "#ffffff",
+    borderRightColor: "#d9e4f7",
+    borderBottomColor: "#d9e4f7",
     borderRadius: 24,
     paddingHorizontal: 16,
     paddingVertical: 11,
-    backgroundColor: '#f2f7ff',
-    justifyContent: 'center',
-    color: '#24324b',
-    shadowColor: '#9eb5d9',
+    backgroundColor: "#f2f7ff",
+    justifyContent: "center",
+    color: "#24324b",
+    shadowColor: "#9eb5d9",
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.28,
+    shadowOpacity: 0.2,
     shadowRadius: 14,
-    elevation: 9,
+    elevation: 8,
   },
   inputText: {
     fontSize: 14,
-    color: '#24324b',
+    color: "#24324b",
   },
   placeholderText: {
     fontSize: 14,
-    color: '#8ba0c3',
+    color: "#8ba0c3",
   },
   button: {
     marginTop: 6,
-    backgroundColor: '#5a9ef2',
+    backgroundColor: "#5a9ef2",
     borderRadius: 24,
     paddingVertical: 13,
-    alignItems: 'center',
-    shadowColor: '#4A90E2',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.42,
-    shadowRadius: 18,
-    elevation: 13,
+    alignItems: "center",
+    shadowColor: "#2f7fe6",
+    shadowOffset: { width: 0, height: 9 },
+    shadowOpacity: 0.24,
+    shadowRadius: 14,
+    elevation: 8,
   },
   secondaryButton: {
-    backgroundColor: '#6b7a99',
+    backgroundColor: "#6b7a99",
   },
   dangerButton: {
-    backgroundColor: '#d85e78',
+    backgroundColor: "#d85e78",
   },
   buttonText: {
-    color: '#fff',
-    fontWeight: '700',
+    color: "#fff",
+    fontWeight: "700",
   },
   ruleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     gap: 10,
   },
   ruleLabel: {
     flex: 1,
     fontSize: 14,
-    color: '#465777',
+    color: "#465777",
   },
   ruleInput: {
     width: 80,
     borderWidth: 1,
-    borderTopColor: '#ffffff',
-    borderLeftColor: '#ffffff',
-    borderRightColor: '#d9e4f7',
-    borderBottomColor: '#d9e4f7',
+    borderTopColor: "#ffffff",
+    borderLeftColor: "#ffffff",
+    borderRightColor: "#d9e4f7",
+    borderBottomColor: "#d9e4f7",
     borderRadius: 18,
     paddingHorizontal: 8,
     paddingVertical: 8,
-    textAlign: 'center',
-    backgroundColor: '#f2f7ff',
-    color: '#24324b',
-    shadowColor: '#9eb5d9',
+    textAlign: "center",
+    backgroundColor: "#f2f7ff",
+    color: "#24324b",
+    shadowColor: "#9eb5d9",
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.15,
     shadowRadius: 10,
-    elevation: 6,
+    elevation: 5,
   },
   teamWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 8,
   },
   teamButton: {
     borderWidth: 1,
-    borderTopColor: '#ffffff',
-    borderLeftColor: '#ffffff',
-    borderRightColor: '#d9e4f7',
-    borderBottomColor: '#d9e4f7',
+    borderTopColor: "#ffffff",
+    borderLeftColor: "#ffffff",
+    borderRightColor: "#d9e4f7",
+    borderBottomColor: "#d9e4f7",
     borderRadius: 24,
     paddingHorizontal: 14,
     paddingVertical: 10,
-    backgroundColor: '#f2f7ff',
-    shadowColor: '#9eb5d9',
+    backgroundColor: "#f2f7ff",
+    shadowColor: "#9eb5d9",
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.28,
+    shadowOpacity: 0.2,
     shadowRadius: 14,
-    elevation: 9,
-  },
-  teamSelected: {
-    borderColor: '#4a90e2',
-    backgroundColor: '#dcecff',
-    shadowColor: '#4a90e2',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
     elevation: 8,
   },
+  teamSelected: {
+    borderColor: "#4a90e2",
+    backgroundColor: "#dcecff",
+    shadowColor: "#4a90e2",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.22,
+    shadowRadius: 12,
+    elevation: 7,
+  },
   teamButtonText: {
-    color: '#465777',
+    color: "#465777",
     fontSize: 13,
   },
   rowBetween: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     gap: 8,
   },
   rowText: {
@@ -802,29 +881,29 @@ const styles = StyleSheet.create({
   deleteButton: {
     flexShrink: 0,
     borderWidth: 1,
-    borderColor: '#f3a4b4',
+    borderColor: "#f3a4b4",
     borderRadius: 20,
     paddingHorizontal: 10,
     paddingVertical: 7,
-    backgroundColor: '#fff1f5',
-    shadowColor: '#eab6c3',
+    backgroundColor: "#fff1f5",
+    shadowColor: "#eab6c3",
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.16,
+    shadowOpacity: 0.12,
     shadowRadius: 10,
-    elevation: 5,
+    elevation: 4,
   },
   deleteButtonText: {
-    color: '#ba5067',
+    color: "#ba5067",
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   toggleHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   toggleIcon: {
     fontSize: 12,
-    color: '#6b7a99',
+    color: "#6b7a99",
   },
 });

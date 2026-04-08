@@ -15,6 +15,7 @@ export interface Tournament {
   name: string;
   date: string;
   pointRules: PointRules;
+  matchesOrderVersion?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -42,6 +43,7 @@ export interface Match {
   tournamentId: string;
   homeTeamId: string;
   awayTeamId: string;
+  displayOrder?: number;
   setScores: MatchSetScore[];
   totalScore: MatchSetScore;
   outcome: MatchOutcome | null;

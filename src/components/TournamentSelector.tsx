@@ -28,7 +28,6 @@ export default function TournamentSelector({
               key={item.id}
               selected={selectedTournamentId === item.id}
               name={item.name}
-              date={item.date}
               onPress={() => {
                 Keyboard.dismiss();
                 onSelect(item.id);
@@ -45,12 +44,10 @@ export default function TournamentSelector({
 function AnimatedTournamentChip({
   selected,
   name,
-  date,
   onPress,
 }: {
   selected: boolean;
   name: string;
-  date: string;
   onPress: () => void;
 }) {
   const opacityAnim = useRef(new Animated.Value(selected ? 1 : 0.9)).current;
@@ -95,7 +92,6 @@ function AnimatedTournamentChip({
     >
       <AnimatedPressable style={[styles.chip, selected && styles.chipSelected]} onPress={onPress}>
         <Text style={[styles.chipText, selected && styles.chipTextSelected]}>{name}</Text>
-        <Text style={[styles.chipSubText, selected && styles.chipSubTextSelected]}>{date}</Text>
       </AnimatedPressable>
     </Animated.View>
   );
@@ -114,9 +110,9 @@ const styles = StyleSheet.create({
     gap: 12,
     shadowColor: '#8ba4cc',
     shadowOffset: { width: 0, height: 14 },
-    shadowOpacity: 0.34,
+    shadowOpacity: 0.26,
     shadowRadius: 20,
-    elevation: 12,
+    elevation: 10,
   },
   heading: {
     fontSize: 16,
@@ -143,11 +139,12 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     backgroundColor: '#f7faff',
     minWidth: 120,
+    alignItems: 'center',
     shadowColor: '#9eb5d9',
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.15,
     shadowRadius: 12,
-    elevation: 7,
+    elevation: 6,
   },
   chipSelected: {
     borderTopColor: '#f2f8ff',
@@ -157,26 +154,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#d7e9ff',
     shadowColor: '#4a90e2',
     shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.44,
-    shadowRadius: 16,
-    elevation: 11,
+    shadowOpacity: 0.24,
+    shadowRadius: 12,
+    elevation: 7,
   },
   chipText: {
     fontSize: 13,
     color: '#6d7f9f',
     fontWeight: '700',
+    textAlign: 'center',
   },
   chipTextSelected: {
     color: '#1d4f90',
-  },
-  chipSubText: {
-    fontSize: 11,
-    color: '#8ea0bf',
-    marginTop: 3,
-  },
-  chipSubTextSelected: {
-    color: '#356eb8',
-    fontWeight: '600',
   },
   footerText: {
     marginTop: 2,

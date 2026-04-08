@@ -11,30 +11,42 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface ScreenContainerProps {
   title: string;
-  subtitle?: string;
   children: ReactNode;
+  scrollEnabled?: boolean;
+  useScrollView?: boolean;
 }
 
 export default function ScreenContainer({
   title,
-  subtitle,
   children,
+  scrollEnabled = true,
+  useScrollView = true,
 }: ScreenContainerProps) {
+  const content = (
+    <>
+      <Text style={styles.title}>{title}</Text>
+      <View style={styles.body}>{children}</View>
+    </>
+  );
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <KeyboardAvoidingView
         style={styles.keyboardWrap}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <ScrollView
-          contentContainerStyle={styles.content}
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="on-drag"
-        >
-          <Text style={styles.title}>{title}</Text>
-          {subtitle && false ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
-          <View style={styles.body}>{children}</View>
-        </ScrollView>
+        {useScrollView ? (
+          <ScrollView
+            contentContainerStyle={styles.content}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            scrollEnabled={scrollEnabled}
+          >
+            {content}
+          </ScrollView>
+        ) : (
+          <View style={styles.content}>{content}</View>
+        )}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -56,11 +68,6 @@ const styles = StyleSheet.create({
     fontSize: 26,
     fontWeight: '700',
     color: '#21314d',
-  },
-  subtitle: {
-    marginTop: 10,
-    fontSize: 14,
-    color: '#6279a3',
   },
   body: {
     marginTop: 10,

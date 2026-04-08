@@ -7,9 +7,10 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { MaterialIcons } from '@expo/vector-icons';
-import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { onAuthStateChanged } from 'firebase/auth';
+import { useFonts } from 'expo-font';
 import MatchesListScreen from './src/screens/MatchesListScreen';
 import MatchResultInputScreen from './src/screens/MatchResultInputScreen';
 import StandingsScreen from './src/screens/StandingsScreen';
@@ -31,6 +32,32 @@ void SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
 export default function App() {
   const [appReady, setAppReady] = useState(false);
+  const [fontsLoaded] = useFonts({
+    KiwiMaru_300Light: require('@expo-google-fonts/kiwi-maru/300Light/KiwiMaru_300Light.ttf'),
+    KiwiMaru_400Regular: require('@expo-google-fonts/kiwi-maru/400Regular/KiwiMaru_400Regular.ttf'),
+    KiwiMaru_500Medium: require('@expo-google-fonts/kiwi-maru/500Medium/KiwiMaru_500Medium.ttf'),
+  });
+
+  useEffect(() => {
+    if (!fontsLoaded) return;
+
+    const textComponent = Text as typeof Text & {
+      defaultProps?: { style?: unknown };
+    };
+    const inputComponent = TextInput as typeof TextInput & {
+      defaultProps?: { style?: unknown };
+    };
+    const baseStyle = { fontFamily: 'KiwiMaru_400Regular' };
+
+    textComponent.defaultProps = {
+      ...(textComponent.defaultProps ?? {}),
+      style: [textComponent.defaultProps?.style, baseStyle],
+    };
+    inputComponent.defaultProps = {
+      ...(inputComponent.defaultProps ?? {}),
+      style: [inputComponent.defaultProps?.style, baseStyle],
+    };
+  }, [fontsLoaded]);
 
   useEffect(() => {
     let mounted = true;
@@ -60,11 +87,11 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (!appReady) return;
+    if (!appReady || !fontsLoaded) return;
     void SplashScreen.hideAsync().catch(() => undefined);
-  }, [appReady]);
+  }, [appReady, fontsLoaded]);
 
-  if (!appReady) {
+  if (!appReady || !fontsLoaded) {
     return null;
   }
 
@@ -202,9 +229,9 @@ const styles = StyleSheet.create({
     borderColor: '#d8e4f8',
     shadowColor: '#8fa9d3',
     shadowOffset: { width: 0, height: 14 },
-    shadowOpacity: 0.38,
+    shadowOpacity: 0.3,
     shadowRadius: 20,
-    elevation: 13,
+    elevation: 11,
   },
   tabButton: {
     flex: 1,
@@ -221,9 +248,9 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     shadowColor: '#4a90e2',
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.4,
+    shadowOpacity: 0.32,
     shadowRadius: 16,
-    elevation: 12,
+    elevation: 10,
   },
   tabLabel: {
     marginTop: 2,
