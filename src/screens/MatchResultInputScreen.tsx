@@ -348,18 +348,18 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   setLabel: {
-    width: 64,
-    fontSize: 14,
+    width: 68,
+    fontSize: 13,
     color: '#465777',
   },
   setLabelSpacer: {
-    width: 64,
+    width: 68,
   },
   colonSpacer: {
     width: 10,
   },
   teamNameHeader: {
-    width: 56,
+    width: 88,
     fontSize: 11,
     fontWeight: '700',
     color: '#3f5b8b',
@@ -372,7 +372,7 @@ const styles = StyleSheet.create({
     color: '#465777',
   },
   scoreInput: {
-    width: 56,
+    width: 88,
     borderWidth: 1,
     borderTopColor: '#ffffff',
     borderLeftColor: '#ffffff',
