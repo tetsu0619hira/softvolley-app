@@ -24,7 +24,10 @@ export default function ScreenContainer({
 }: ScreenContainerProps) {
   const content = (
     <>
-      <Text style={styles.title}>{title}</Text>
+      <View style={styles.titleContainer}>
+        <View style={styles.titleAccent} />
+        <Text style={styles.title}>{title}</Text>
+      </View>
       <View style={styles.body}>{children}</View>
     </>
   );
@@ -63,6 +66,22 @@ const styles = StyleSheet.create({
   content: {
     padding: 16,
     paddingBottom: 40,
+  },
+  titleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  titleAccent: {
+    width: 4,
+    height: 30,
+    borderRadius: 2,
+    backgroundColor: '#3b6fd4',
+    shadowColor: '#3b6fd4',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.4,
+    shadowRadius: 4,
+    elevation: 3,
   },
   title: {
     fontSize: 26,

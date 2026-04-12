@@ -172,7 +172,7 @@ export default function MatchResultInputScreen() {
           <View style={styles.card}>
             <Text style={styles.heading}>対象試合を選択</Text>
             <AnimatedPressable
-              style={styles.selectorTrigger}
+              style={[styles.selectorTrigger, selectedMatch?.status === 'completed' && styles.selectorTriggerCompleted]}
               onPress={() => {
                 Keyboard.dismiss();
                 setShowMatchPicker(true);
@@ -199,6 +199,18 @@ export default function MatchResultInputScreen() {
 
           <View style={styles.card}>
             <Text style={styles.heading}>スコア入力</Text>
+            {selectedMatch ? (
+              <View style={styles.row}>
+                <View style={styles.setLabelSpacer} />
+                <Text style={styles.teamNameHeader} numberOfLines={1} ellipsizeMode="tail">
+                  {teamNameMap[selectedMatch.homeTeamId] ?? ''}
+                </Text>
+                <View style={styles.colonSpacer} />
+                <Text style={styles.teamNameHeader} numberOfLines={1} ellipsizeMode="tail">
+                  {teamNameMap[selectedMatch.awayTeamId] ?? ''}
+                </Text>
+              </View>
+            ) : null}
             <View style={styles.row}>
               <Text style={styles.setLabel}>1セット目</Text>
               <ScoreInput inputRef={set1HomeRef} value={set1Home} onChange={setSet1Home} />
@@ -247,6 +259,7 @@ export default function MatchResultInputScreen() {
                   style={[
                     styles.selectorTrigger,
                     styles.modalSelectorItem,
+                    match.status === 'completed' && styles.modalItemCompleted,
                     match.id === matchId && styles.modalItemSelected,
                   ]}
                   onPress={() => {
@@ -339,6 +352,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#465777',
   },
+  setLabelSpacer: {
+    width: 64,
+  },
+  colonSpacer: {
+    width: 10,
+  },
+  teamNameHeader: {
+    width: 56,
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#3f5b8b',
+    textAlign: 'center',
+  },
   colon: {
     width: 10,
     textAlign: 'center',
@@ -379,6 +405,17 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 14,
     elevation: 8,
+  },
+  selectorTriggerCompleted: {
+    backgroundColor: '#edf7ee',
+    borderRightColor: '#b8d9bf',
+    borderBottomColor: '#b8d9bf',
+    shadowColor: '#8ec4a0',
+  },
+  modalItemCompleted: {
+    backgroundColor: '#edf7ee',
+    borderRightColor: '#b8d9bf',
+    borderBottomColor: '#b8d9bf',
   },
   modalSelectorItem: {
     minHeight: 48,

@@ -147,6 +147,7 @@ export default function MatchesListScreen() {
                   style={[
                     styles.tableRow,
                     styles.bodyRow,
+                    item.status === "completed" && styles.bodyRowCompleted,
                     isActive && styles.draggingRow,
                   ]}
                   onLongPress={() => {
@@ -184,7 +185,7 @@ export default function MatchesListScreen() {
           {localMatches.length > 0 && !isAdmin ? (
             <>
               {localMatches.map((item) => (
-                <View key={item.id} style={[styles.tableRow, styles.bodyRow]}>
+                <View key={item.id} style={[styles.tableRow, styles.bodyRow, item.status === "completed" && styles.bodyRowCompleted]}>
                   <View style={styles.colTeams}>
                     <MatchupLabel
                       home={teamNameMap[item.homeTeamId] ?? "未設定"}
@@ -261,6 +262,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.18,
     shadowRadius: 10,
     elevation: 5,
+  },
+  bodyRowCompleted: {
+    backgroundColor: '#edf7ee',
+    borderRightColor: '#b8d9bf',
+    borderBottomColor: '#b8d9bf',
+    shadowColor: '#8ec4a0',
   },
   draggingRow: {
     opacity: 0.86,

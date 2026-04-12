@@ -165,7 +165,7 @@ function SwipeBottomTabBar({
               : typeof options.title === 'string'
                 ? options.title
                 : route.name;
-          const color = focused ? '#1155cc' : '#718096';
+          const color = focused ? '#1155cc' : '#6b7a99';
           const iconName =
             route.name === '試合一覧'
               ? 'format-list-bulleted'
@@ -226,7 +226,10 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     padding: 5,
     borderWidth: 1,
-    borderColor: '#d8e4f8',
+    borderTopColor: '#ffffff',
+    borderLeftColor: '#ffffff',
+    borderRightColor: '#cfdcf0',
+    borderBottomColor: '#cfdcf0',
     shadowColor: '#8fa9d3',
     shadowOffset: { width: 0, height: 14 },
     shadowOpacity: 0.3,

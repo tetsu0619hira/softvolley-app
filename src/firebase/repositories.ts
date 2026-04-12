@@ -29,7 +29,7 @@ export function subscribeTournaments(callback: (items: Tournament[]) => void): U
     return () => undefined;
   }
 
-  const q = query(collection(db, COLLECTIONS.tournaments), orderBy('createdAt', 'desc'));
+  const q = query(collection(db, COLLECTIONS.tournaments), orderBy('createdAt', 'asc'));
 
   return onSnapshot(q, (snap) => {
     const items = snap.docs.map((item) => ({
