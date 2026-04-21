@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "2セットマッチ",
+    "name": "TwoSetMatch",
     "slug": "softvolley-app",
     "version": "1.0.1",
     "orientation": "portrait",
@@ -27,7 +27,8 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.tetsu0619hira.softvolleyapp"
     },
     "web": {
       "favicon": "./assets/favicon.png"
