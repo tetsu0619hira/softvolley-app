@@ -31,6 +31,7 @@ import {
 } from "../constants/defaultRules";
 import { auth, firebaseConfigReady } from "../firebase/config";
 import {
+  clearTournamentResults,
   createMatch,
   createTeam,
   createTournament,
@@ -305,6 +306,39 @@ export default function AdminScreen() {
     ]);
   };
 
+  const handleClearResults = async () => {
+    if (!currentTournament) {
+      Alert.alert("対象なし", "大会を選択してください。");
+      return;
+    }
+    Keyboard.dismiss();
+    Alert.alert(
+      "結果クリア確認",
+      `「${currentTournament.name}」の全試合結果をクリアします。\n対戦カードは残ります。`,
+      [
+        { text: "キャンセル", style: "cancel" },
+        {
+          text: "クリア",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              setSaving(true);
+              await clearTournamentResults(currentTournament.id);
+              Alert.alert("完了", "全試合の結果をクリアしました。");
+            } catch (error) {
+              Alert.alert(
+                "失敗",
+                error instanceof Error ? error.message : "結果クリアに失敗しました。",
+              );
+            } finally {
+              setSaving(false);
+            }
+          },
+        },
+      ],
+    );
+  };
+
   const handleDeleteTournament = async () => {
     if (!currentTournament) {
       Alert.alert("対象なし", "削除対象の大会がありません。");
@@ -497,6 +531,13 @@ export default function AdminScreen() {
                   disabled={saving}
                 >
                   <Text style={styles.buttonText}>大会を保存</Text>
+                </AnimatedPressable>
+                <AnimatedPressable
+                  style={[styles.button, styles.warningButton]}
+                  onPress={handleClearResults}
+                  disabled={saving || !currentTournament}
+                >
+                  <Text style={styles.buttonText}>試合結果をクリア</Text>
                 </AnimatedPressable>
                 <AnimatedPressable
                   style={[styles.button, styles.dangerButton]}
@@ -800,6 +841,9 @@ const styles = StyleSheet.create({
   },
   dangerButton: {
     backgroundColor: "#d85e78",
+  },
+  warningButton: {
+    backgroundColor: "#e8924a",
   },
   buttonText: {
     color: "#fff",

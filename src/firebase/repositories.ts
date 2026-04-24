@@ -228,6 +228,27 @@ export async function deleteMatch(matchId: string) {
   await deleteDoc(doc(db, COLLECTIONS.matches, matchId));
 }
 
+export async function clearTournamentResults(tournamentId: string) {
+  if (!db) throw new Error('Firebase未設定です。');
+  const dbRef = db;
+  const matchesSnap = await getDocs(
+    query(collection(dbRef, COLLECTIONS.matches), where('tournamentId', '==', tournamentId)),
+  );
+  const updatedAt = nowIso();
+  await Promise.all(
+    matchesSnap.docs.map((item) =>
+      updateDoc(doc(dbRef, COLLECTIONS.matches, item.id), {
+        setScores: [],
+        totalScore: { home: 0, away: 0 },
+        outcome: null,
+        points: { home: 0, away: 0 },
+        status: 'scheduled',
+        updatedAt,
+      }),
+    ),
+  );
+}
+
 export async function reorderMatches(
   tournamentId: string,
   matchIdsInOrder: string[],

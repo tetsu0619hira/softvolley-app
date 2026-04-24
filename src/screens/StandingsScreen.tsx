@@ -55,6 +55,7 @@ export default function StandingsScreen() {
   }, [teams, matches]);
 
   const rankedStandings = useMemo(() => {
+    let currentRank = 1;
     return standings.map((row, index) => {
       const prev = standings[index - 1];
       const isSameAsPrev =
@@ -63,16 +64,17 @@ export default function StandingsScreen() {
         prev.scored === row.scored &&
         prev.conceded === row.conceded;
 
-      const rank = isSameAsPrev ? 0 : index + 1;
-      return { ...row, rank };
+      if (!isSameAsPrev) {
+        currentRank = index + 1;
+      }
+      return { ...row, rank: currentRank };
     });
   }, [standings]);
 
   const tieRankSet = useMemo(() => {
     const count = new Map<number, number>();
-    rankedStandings.forEach((row, index) => {
-      const rankNumber = row.rank === 0 ? rankedStandings[index - 1].rank : row.rank;
-      count.set(rankNumber, (count.get(rankNumber) ?? 0) + 1);
+    rankedStandings.forEach((row) => {
+      count.set(row.rank, (count.get(row.rank) ?? 0) + 1);
     });
     return new Set(Array.from(count.entries()).filter(([, c]) => c > 1).map(([r]) => r));
   }, [rankedStandings]);
