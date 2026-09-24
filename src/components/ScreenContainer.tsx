@@ -28,7 +28,9 @@ export default function ScreenContainer({
         <View style={styles.titleAccent} />
         <Text style={styles.title}>{title}</Text>
       </View>
-      <View style={styles.body}>{children}</View>
+      <View style={[styles.body, !useScrollView && styles.fill]}>
+        {children}
+      </View>
     </>
   );
 
@@ -48,7 +50,7 @@ export default function ScreenContainer({
             {content}
           </ScrollView>
         ) : (
-          <View style={styles.content}>{content}</View>
+          <View style={[styles.content, styles.fill]}>{content}</View>
         )}
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -91,5 +93,10 @@ const styles = StyleSheet.create({
   body: {
     marginTop: 10,
     gap: 16,
+  },
+  // スクロールなしモード（中身のリストが自分でスクロールする画面）で
+  // 画面の残り高さいっぱいに広げ、リストの高さを画面内に収める
+  fill: {
+    flex: 1,
   },
 });

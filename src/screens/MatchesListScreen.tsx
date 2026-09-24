@@ -98,8 +98,8 @@ export default function MatchesListScreen() {
         onSelect={setSelectedTournamentId}
       />
 
-      <View style={styles.tableCardShadow}>
-        <View style={styles.tableCard}>
+      <View style={[styles.tableCardShadow, isAdmin && styles.fill]}>
+        <View style={[styles.tableCard, isAdmin && styles.fill]}>
           <View style={[styles.tableRow, styles.headerRow]}>
             <Text
               style={[
@@ -135,6 +135,8 @@ export default function MatchesListScreen() {
           {localMatches.length > 0 && isAdmin ? (
             <DragList
               style={styles.dragList}
+              containerStyle={styles.fill}
+              contentContainerStyle={styles.dragListContent}
               data={localMatches}
               keyExtractor={(item) => item.id}
               renderItem={({
@@ -340,6 +342,13 @@ const styles = StyleSheet.create({
   },
   dragList: {
     backgroundColor: "transparent",
+  },
+  // 管理者表示ではリスト自身がスクロールするため、枠を画面の残り高さに収める
+  fill: {
+    flex: 1,
+  },
+  dragListContent: {
+    paddingBottom: 24,
   },
   emptyText: {
     flex: 1,
