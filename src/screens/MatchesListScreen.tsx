@@ -127,9 +127,13 @@ export default function MatchesListScreen() {
 
           {isAdmin && matches.length > 1 ? (
             <Text style={styles.reorderHint}>
-              長押しで掴んだまま並び替えできます
+              タップで結果を入力・修正／長押しで掴んだまま並び替え
               {savingOrder ? "（保存中...）" : ""}
             </Text>
+          ) : null}
+
+          {!isAdmin && localMatches.some((item) => item.status !== "completed") ? (
+            <Text style={styles.reorderHint}>未入力の試合をタップすると結果を入力できます</Text>
           ) : null}
 
           {localMatches.length > 0 && isAdmin ? (
@@ -163,6 +167,14 @@ export default function MatchesListScreen() {
                       setIsDragging(false);
                     }
                   }}
+                  onPress={() => {
+                    // 長押し（並び替え）が成立したときは呼ばれない。タップだけ＝その試合の結果入力を開く
+                    if (!isAdmin || savingOrder) return;
+                    navigation.navigate({
+                      name: "結果入力",
+                      params: { matchId: item.id },
+                    } as never);
+                  }}
                   delayLongPress={180}
                   disabled={!isAdmin}
                 >
@@ -187,7 +199,18 @@ export default function MatchesListScreen() {
           {localMatches.length > 0 && !isAdmin ? (
             <>
               {localMatches.map((item) => (
-                <View key={item.id} style={[styles.tableRow, styles.bodyRow, item.status === "completed" && styles.bodyRowCompleted]}>
+                <Pressable
+                  key={item.id}
+                  style={[styles.tableRow, styles.bodyRow, item.status === "completed" && styles.bodyRowCompleted]}
+                  // 未ログインは未入力の試合だけ入力できる（入力済みの閲覧・修正は管理者のみ）
+                  disabled={item.status === "completed"}
+                  onPress={() =>
+                    navigation.navigate({
+                      name: "結果入力",
+                      params: { matchId: item.id },
+                    } as never)
+                  }
+                >
                   <View style={styles.colTeams}>
                     <MatchupLabel
                       home={teamNameMap[item.homeTeamId] ?? "未設定"}
@@ -200,7 +223,7 @@ export default function MatchesListScreen() {
                       ? `${item.setScores[0]?.home}-${item.setScores[0]?.away} / ${item.setScores[1]?.home}-${item.setScores[1]?.away}`
                       : "-"}
                   </Text>
-                </View>
+                </Pressable>
               ))}
             </>
           ) : null}

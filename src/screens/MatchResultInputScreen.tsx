@@ -10,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import { onAuthStateChanged, User } from 'firebase/auth';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
 import AnimatedPressable from '../components/AnimatedPressable';
 import MatchupLabel from '../components/MatchupLabel';
@@ -88,6 +89,23 @@ export default function MatchResultInputScreen() {
       setMatchId('');
     }
   }, [matchId, visibleMatches]);
+
+  // 試合一覧でタップされた試合を受け取って選択状態にする（管理者の結果修正用）
+  const route = useRoute();
+  const navigation = useNavigation();
+  const requestedMatchId = (route.params as { matchId?: string } | undefined)?.matchId;
+  useEffect(() => {
+    if (!requestedMatchId) return;
+    if (!visibleMatches.some((item) => item.id === requestedMatchId)) {
+      // 読み込みが終わっても見つからない（削除済み・権限外など）なら指定を捨てる。読み込み中は待つ
+      if (!isScreenLoading) navigation.setParams({ matchId: undefined } as never);
+      return;
+    }
+    setMatchId(requestedMatchId);
+    setShowMatchPicker(false);
+    // 同じ試合をもう一度タップしたときにも反応するよう、受け取った指定は消しておく
+    navigation.setParams({ matchId: undefined } as never);
+  }, [requestedMatchId, visibleMatches, navigation, isScreenLoading]);
 
   useEffect(() => {
     if (!selectedMatch) return;
