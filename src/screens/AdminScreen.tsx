@@ -38,10 +38,17 @@ import {
   deleteMatch,
   deleteTeam,
   deleteTournament,
+  replaceWithGeneratedMatches,
+  updateTeamDrawNumbers,
   updateTournamentPointRules,
 } from "../firebase/repositories";
 import { useTournamentData } from "../hooks/useTournamentData";
 import { PointRules } from "../types/models";
+import {
+  buildTriangleMatches,
+  checkDrawAssignments,
+  TRIANGLE_TEAM_COUNT,
+} from "../utils/triangleSchedule";
 
 export default function AdminScreen() {
   const firebaseReady = useMemo(() => firebaseConfigReady, []);
@@ -67,12 +74,15 @@ export default function AdminScreen() {
   const [homeTeamId, setHomeTeamId] = useState("");
   const [awayTeamId, setAwayTeamId] = useState("");
   const [saving, setSaving] = useState(false);
+  // くじ番号の入力欄（チームID → 入力文字列）。保存ボタンで一括保存する
+  const [drawInputs, setDrawInputs] = useState<Record<string, string>>({});
   const [sectionOpen, setSectionOpen] = useState({
     connection: false,
     session: false,
     tournament: false,
     rules: false,
     teams: false,
+    triangle: false,
     matches: false,
   });
 
@@ -102,6 +112,36 @@ export default function AdminScreen() {
       setRules(normalizePointRules(currentTournament.pointRules));
     }
   }, [currentTournament]);
+
+  // 大会を切り替えたら入力欄を捨てる
+  useEffect(() => {
+    setDrawInputs({});
+  }, [currentTournament?.id]);
+
+  // 保存済みのくじ番号を入力欄に反映（編集中の欄は上書きしない）
+  useEffect(() => {
+    setDrawInputs((prev) => {
+      const next: Record<string, string> = {};
+      teams.forEach((team) => {
+        next[team.id] = prev[team.id] ?? savedDrawText(team.drawNumber);
+      });
+      return next;
+    });
+  }, [teams]);
+
+  const hasUnsavedDrawNumbers = teams.some(
+    (team) =>
+      normalizeDrawText(drawInputs[team.id]) !== savedDrawText(team.drawNumber),
+  );
+
+  const drawCheck = useMemo(() => checkDrawAssignments(teams), [teams]);
+  const completedMatchCount = matches.filter(
+    (match) => match.status === "completed",
+  ).length;
+  const canGenerateTriangle =
+    drawCheck.canGenerate &&
+    !hasUnsavedDrawNumbers &&
+    completedMatchCount === 0;
 
   const handleAdminLogin = async () => {
     Keyboard.dismiss();
@@ -243,6 +283,99 @@ export default function AdminScreen() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleSaveDrawNumbers = async () => {
+    Keyboard.dismiss();
+    if (!currentTournament) {
+      Alert.alert("対象なし", "先に大会を作成してください。");
+      return;
+    }
+
+    const updates: { teamId: string; drawNumber: number | null }[] = [];
+    teams.forEach((team) => {
+      const text = normalizeDrawText(drawInputs[team.id]);
+      if (text === savedDrawText(team.drawNumber)) return;
+      updates.push({
+        teamId: team.id,
+        drawNumber: text === "" ? null : Number(text),
+      });
+    });
+
+    if (updates.length === 0) {
+      Alert.alert("変更なし", "保存するくじ番号の変更はありません。");
+      return;
+    }
+
+    try {
+      setSaving(true);
+      await updateTeamDrawNumbers(updates);
+      Alert.alert("保存完了", `くじ番号を保存しました（${updates.length}件）。`);
+    } catch (error) {
+      Alert.alert(
+        "保存失敗",
+        error instanceof Error ? error.message : "くじ番号の保存に失敗しました。",
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const runGenerateTriangle = async (tournamentId: string) => {
+    try {
+      setSaving(true);
+      const specs = buildTriangleMatches(teams);
+      await replaceWithGeneratedMatches(tournamentId, specs);
+      setHomeTeamId("");
+      setAwayTeamId("");
+      Alert.alert("生成完了", `${specs.length}試合を生成しました。`);
+    } catch (error) {
+      Alert.alert(
+        "生成失敗",
+        error instanceof Error
+          ? error.message
+          : "組み合わせの生成に失敗しました。",
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleGenerateTriangle = () => {
+    Keyboard.dismiss();
+    if (!currentTournament) {
+      Alert.alert("対象なし", "先に大会を作成してください。");
+      return;
+    }
+    if (completedMatchCount > 0) {
+      Alert.alert(
+        "生成できません",
+        `結果入力済みの試合が ${completedMatchCount} 件あります。\n作り直す場合は先に「試合結果をクリア」してください。`,
+      );
+      return;
+    }
+    if (!canGenerateTriangle) {
+      Alert.alert("入力不足", "生成の条件を満たしていません。");
+      return;
+    }
+
+    const tournamentId = currentTournament.id;
+    if (matches.length === 0) {
+      runGenerateTriangle(tournamentId);
+      return;
+    }
+    Alert.alert(
+      "組み合わせ生成確認",
+      `既存の対戦カード ${matches.length} 件を削除して生成します。`,
+      [
+        { text: "キャンセル", style: "cancel" },
+        {
+          text: "削除して生成",
+          style: "destructive",
+          onPress: () => runGenerateTriangle(tournamentId),
+        },
+      ],
+    );
   };
 
   const handleDeleteTeam = async (teamId: string, teamName: string) => {
@@ -626,18 +759,131 @@ export default function AdminScreen() {
                 >
                   <Text style={styles.buttonText}>チームを保存</Text>
                 </AnimatedPressable>
-                {teams.map((team) => (
-                  <View key={team.id} style={styles.rowBetween}>
-                    <Text style={styles.item}>- {team.name}</Text>
-                    <AnimatedPressable
-                      style={styles.deleteButton}
-                      onPress={() => handleDeleteTeam(team.id, team.name)}
-                      disabled={saving}
-                    >
-                      <Text style={styles.deleteButtonText}>削除</Text>
-                    </AnimatedPressable>
-                  </View>
-                ))}
+                {teams.length > 0 ? (
+                  <Text style={styles.subItem}>
+                    右の欄にくじ番号（空欄可）を入力し、「くじ番号を保存」でまとめて保存します。
+                  </Text>
+                ) : null}
+                {teams.map((team) => {
+                  const drawText = drawInputs[team.id] ?? "";
+                  return (
+                    <View key={team.id} style={styles.rowBetween}>
+                      <Text
+                        style={[styles.item, styles.rowText]}
+                        numberOfLines={1}
+                      >
+                        - {team.name}
+                      </Text>
+                      <TextInput
+                        value={drawText}
+                        onChangeText={(text) =>
+                          setDrawInputs((prev) => ({
+                            ...prev,
+                            [team.id]: text.replace(/[^0-9]/g, ""),
+                          }))
+                        }
+                        keyboardType="number-pad"
+                        maxLength={2}
+                        placeholder="番号"
+                        placeholderTextColor="#8ba0c3"
+                        style={[
+                          styles.drawInput,
+                          normalizeDrawText(drawText) !== savedDrawText(team.drawNumber) &&
+                            styles.drawInputDirty,
+                        ]}
+                      />
+                      <AnimatedPressable
+                        style={styles.deleteButton}
+                        onPress={() => handleDeleteTeam(team.id, team.name)}
+                        disabled={saving}
+                      >
+                        <Text style={styles.deleteButtonText}>削除</Text>
+                      </AnimatedPressable>
+                    </View>
+                  );
+                })}
+                {teams.length > 0 ? (
+                  <AnimatedPressable
+                    style={styles.button}
+                    onPress={handleSaveDrawNumbers}
+                    disabled={saving}
+                  >
+                    <Text style={styles.buttonText}>くじ番号を保存</Text>
+                  </AnimatedPressable>
+                ) : null}
+              </>
+            ) : null}
+          </View>
+
+          <View style={styles.card}>
+            <AnimatedPressable
+              style={styles.toggleHeader}
+              onPress={() => toggleSection("triangle")}
+            >
+              <Text style={styles.heading}>三角形予選の生成</Text>
+              <Text style={styles.toggleIcon}>
+                {sectionOpen.triangle ? "▲" : "▼"}
+              </Text>
+            </AnimatedPressable>
+            {sectionOpen.triangle ? (
+              <>
+                <Text style={styles.subItem}>
+                  くじ番号から{TRIANGLE_TEAM_COUNT}チーム・A〜Iの9コート・3ラウンド（各チーム6試合）の対戦カードを一括作成します。
+                </Text>
+                <Text style={styles.item}>
+                  登録チーム数: {drawCheck.teamCount} / {TRIANGLE_TEAM_COUNT}
+                </Text>
+                <Text style={styles.item}>
+                  くじ番号入力済み: {drawCheck.assignedCount} /{" "}
+                  {drawCheck.teamCount}
+                </Text>
+                {drawCheck.teamCount !== TRIANGLE_TEAM_COUNT ? (
+                  <Text style={styles.warningText}>
+                    この機能は{TRIANGLE_TEAM_COUNT}チーム専用です。
+                  </Text>
+                ) : null}
+                {drawCheck.duplicates.length > 0 ? (
+                  <Text style={styles.warningText}>
+                    重複している番号: {drawCheck.duplicates.join("、")}
+                  </Text>
+                ) : null}
+                {drawCheck.outOfRange.length > 0 ? (
+                  <Text style={styles.warningText}>
+                    範囲外（1〜{TRIANGLE_TEAM_COUNT}以外）の番号:{" "}
+                    {drawCheck.outOfRange.join("、")}
+                  </Text>
+                ) : null}
+                {drawCheck.teamCount === TRIANGLE_TEAM_COUNT &&
+                drawCheck.missing.length > 0 ? (
+                  <Text style={styles.warningText}>
+                    未使用の番号: {drawCheck.missing.join("、")}
+                  </Text>
+                ) : null}
+                {hasUnsavedDrawNumbers ? (
+                  <Text style={styles.warningText}>
+                    未保存のくじ番号があります。先に「くじ番号を保存」を押してください。
+                  </Text>
+                ) : null}
+                {completedMatchCount > 0 ? (
+                  <Text style={styles.warningText}>
+                    結果入力済みの試合が {completedMatchCount}{" "}
+                    件あるため生成できません。作り直す場合は先に「試合結果をクリア」してください。
+                  </Text>
+                ) : matches.length > 0 ? (
+                  <Text style={styles.item}>
+                    既存の対戦カード {matches.length} 件は生成時に削除されます。
+                  </Text>
+                ) : null}
+                <AnimatedPressable
+                  style={[
+                    styles.button,
+                    !canGenerateTriangle && styles.disabledButton,
+                  ]}
+                  onPress={handleGenerateTriangle}
+                  disabled={saving || !canGenerateTriangle}
+                >
+                  <Text style={styles.buttonText}>組み合わせを生成</Text>
+                </AnimatedPressable>
               </>
             ) : null}
           </View>
@@ -760,6 +1006,16 @@ function TeamButton({
   );
 }
 
+function savedDrawText(drawNumber?: number): string {
+  return typeof drawNumber === "number" ? String(drawNumber) : "";
+}
+
+// 入力欄の文字列を保存値と比べられる形に（"05" → "5"、空欄は ""）
+function normalizeDrawText(text?: string): string {
+  const trimmed = (text ?? "").trim();
+  return trimmed === "" ? "" : String(Number(trimmed));
+}
+
 function formatDate(date: Date): string {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, "0");
@@ -792,6 +1048,39 @@ const styles = StyleSheet.create({
   item: {
     fontSize: 14,
     color: "#465777",
+  },
+  subItem: {
+    fontSize: 12,
+    color: "#6b7a99",
+  },
+  warningText: {
+    fontSize: 13,
+    color: "#ba5067",
+  },
+  drawInput: {
+    width: 56,
+    flexShrink: 0,
+    borderWidth: 1,
+    borderTopColor: "#ffffff",
+    borderLeftColor: "#ffffff",
+    borderRightColor: "#d9e4f7",
+    borderBottomColor: "#d9e4f7",
+    borderRadius: 16,
+    paddingHorizontal: 6,
+    paddingVertical: 6,
+    textAlign: "center",
+    fontSize: 14,
+    backgroundColor: "#f2f7ff",
+    color: "#24324b",
+    shadowColor: "#9eb5d9",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  drawInputDirty: {
+    borderColor: "#e8924a",
+    backgroundColor: "#fff6ec",
   },
   status: {
     fontSize: 13,
@@ -844,6 +1133,10 @@ const styles = StyleSheet.create({
   },
   warningButton: {
     backgroundColor: "#e8924a",
+  },
+  disabledButton: {
+    backgroundColor: "#a9b8d3",
+    shadowOpacity: 0.1,
   },
   buttonText: {
     color: "#fff",

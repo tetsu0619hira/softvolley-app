@@ -8,12 +8,16 @@ import {
   orderBy,
   query,
   runTransaction,
+  deleteField,
+  increment,
   updateDoc,
   where,
+  writeBatch,
 } from 'firebase/firestore';
 import { DEFAULT_POINT_RULES, normalizePointRules } from '../constants/defaultRules';
 import { Match, MatchSetScore, PointRules, Team, Tournament } from '../types/models';
 import { calculateMatchPoints, calculateTotalScore } from '../utils/matchScoring';
+import { TriangleMatchSpec } from '../utils/triangleSchedule';
 import { detectOutcome, validateTwoSetScores } from '../utils/scoreValidation';
 import { COLLECTIONS } from './collections';
 import { db } from './config';
@@ -176,6 +180,85 @@ export async function deleteTeam(teamId: string, tournamentId: string) {
 
   await Promise.all(deleteTasks);
   await deleteDoc(doc(dbRef, COLLECTIONS.teams, teamId));
+}
+
+export async function updateTeamDrawNumbers(
+  updates: { teamId: string; drawNumber: number | null }[],
+) {
+  if (!db) throw new Error('Firebase未設定です。');
+  if (updates.length === 0) return;
+
+  const dbRef = db;
+  const updatedAt = nowIso();
+  const batch = writeBatch(dbRef);
+  updates.forEach(({ teamId, drawNumber }) => {
+    batch.update(doc(dbRef, COLLECTIONS.teams, teamId), {
+      drawNumber: drawNumber === null ? deleteField() : drawNumber,
+      updatedAt,
+    });
+  });
+  await batch.commit();
+}
+
+/**
+ * 三角形予選の試合を一括生成する。既存の試合はすべて削除してから作る。
+ * 結果入力済みの試合が1つでもあれば何もせずエラーにする。
+ */
+export async function replaceWithGeneratedMatches(
+  tournamentId: string,
+  specs: TriangleMatchSpec[],
+) {
+  if (!db) throw new Error('Firebase未設定です。');
+  const dbRef = db;
+
+  const existing = await getDocs(
+    query(collection(dbRef, COLLECTIONS.matches), where('tournamentId', '==', tournamentId)),
+  );
+  const completedCount = existing.docs.filter(
+    (item) => (item.data() as Match).status === 'completed',
+  ).length;
+  if (completedCount > 0) {
+    throw new Error(
+      `結果入力済みの試合が ${completedCount} 件あるため生成できません。先に「試合結果をクリア」してください。`,
+    );
+  }
+
+  // 削除分＋生成分＋大会の並び順バージョン更新（writeBatch の上限は500件）
+  if (existing.size + specs.length + 1 > 500) {
+    throw new Error('既存の対戦カードが多すぎるため一括生成できません。');
+  }
+
+  const timestamp = nowIso();
+  const batch = writeBatch(dbRef);
+  existing.docs.forEach((item) => {
+    batch.delete(doc(dbRef, COLLECTIONS.matches, item.id));
+  });
+  specs.forEach((spec) => {
+    batch.set(doc(collection(dbRef, COLLECTIONS.matches)), {
+      tournamentId,
+      homeTeamId: spec.homeTeamId,
+      awayTeamId: spec.awayTeamId,
+      displayOrder: spec.displayOrder,
+      round: spec.round,
+      court: spec.court,
+      gameNo: spec.gameNo,
+      refereeTeamId: spec.refereeTeamId,
+      generated: true,
+      setScores: [],
+      totalScore: { home: 0, away: 0 },
+      outcome: null,
+      points: { home: 0, away: 0 },
+      status: 'scheduled',
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    });
+  });
+  // 試合一覧で並び替え途中の端末があっても古い順序で上書きしないよう、バージョンを進める
+  batch.update(doc(dbRef, COLLECTIONS.tournaments, tournamentId), {
+    matchesOrderVersion: increment(1),
+    updatedAt: timestamp,
+  });
+  await batch.commit();
 }
 
 export async function createMatch(tournamentId: string, homeTeamId: string, awayTeamId: string) {

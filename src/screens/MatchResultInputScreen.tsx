@@ -19,6 +19,7 @@ import TournamentSelector from '../components/TournamentSelector';
 import { auth } from '../firebase/config';
 import { useDelayedLoading } from '../hooks/useDelayedLoading';
 import { detectOutcome, validateTwoSetScores } from '../utils/scoreValidation';
+import { courtLetter } from '../utils/triangleSchedule';
 import { useTournamentData } from '../hooks/useTournamentData';
 import { submitMatchResult } from '../firebase/repositories';
 
@@ -212,6 +213,14 @@ export default function MatchResultInputScreen() {
               </View>
             </AnimatedPressable>
             {selectorSubText ? <Text style={styles.subItem}>{selectorSubText}</Text> : null}
+            {selectedMatch?.refereeTeamId ? (
+              <Text style={styles.subItem}>
+                {typeof selectedMatch.round === 'number' && typeof selectedMatch.court === 'number'
+                  ? `第${selectedMatch.round}ラウンド・${courtLetter(selectedMatch.court)}コート${typeof selectedMatch.gameNo === 'number' ? ` 第${selectedMatch.gameNo}試合` : ''}　`
+                  : ''}
+                審判: {teamNameMap[selectedMatch.refereeTeamId] ?? '未設定'}
+              </Text>
+            ) : null}
             {visibleMatches.length === 0 ? <Text style={styles.item}>試合がありません。</Text> : null}
           </View>
 
