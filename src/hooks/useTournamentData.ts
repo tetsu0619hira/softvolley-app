@@ -8,8 +8,11 @@ export function useTournamentData() {
   const [teams, setTeams] = useState<Team[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
   const [hasLoadedTournaments, setHasLoadedTournaments] = useState(false);
-  const [hasLoadedTeams, setHasLoadedTeams] = useState(false);
-  const [hasLoadedMatches, setHasLoadedMatches] = useState(false);
+  // どの大会のチーム・試合を読み込み済みか（undefined=未読み込み・null=大会なし）。
+  // 真偽値フラグだと「大会未確定→大会確定」の切り替わりで古い「読み込み済み」が一瞬残り、
+  // 試合一覧から渡された試合IDが「読み込み完了なのに見つからない」と誤判定されて捨てられる
+  const [teamsLoadedFor, setTeamsLoadedFor] = useState<string | null | undefined>(undefined);
+  const [matchesLoadedFor, setMatchesLoadedFor] = useState<string | null | undefined>(undefined);
   const { selectedTournamentId, setSelectedTournamentId } = useTournamentSelection();
 
   useEffect(() => {
@@ -43,20 +46,18 @@ export function useTournamentData() {
     if (!tournamentId) {
       setTeams([]);
       setMatches([]);
-      setHasLoadedTeams(true);
-      setHasLoadedMatches(true);
+      setTeamsLoadedFor(null);
+      setMatchesLoadedFor(null);
       return;
     }
 
-    setHasLoadedTeams(false);
-    setHasLoadedMatches(false);
     const unsubTeams = subscribeTeams(tournamentId, (items) => {
       setTeams(items);
-      setHasLoadedTeams(true);
+      setTeamsLoadedFor(tournamentId);
     });
     const unsubMatches = subscribeMatches(tournamentId, (items) => {
       setMatches(items);
-      setHasLoadedMatches(true);
+      setMatchesLoadedFor(tournamentId);
     });
 
     return () => {
@@ -78,8 +79,12 @@ export function useTournamentData() {
   );
   const waitingForInitialSelection =
     hasLoadedTournaments && tournaments.length > 0 && !hasSelectedTournament;
+  const currentTournamentId = currentTournament?.id ?? null;
   const isInitialLoading =
-    !hasLoadedTournaments || waitingForInitialSelection || !hasLoadedTeams || !hasLoadedMatches;
+    !hasLoadedTournaments ||
+    waitingForInitialSelection ||
+    teamsLoadedFor !== currentTournamentId ||
+    matchesLoadedFor !== currentTournamentId;
 
   return {
     tournaments,
